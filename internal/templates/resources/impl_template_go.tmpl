@@ -1,0 +1,239 @@
+package {{.PackageName}}
+
+import (
+	"context"
+	"net"
+	"time"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/golang/protobuf/proto"
+	"github.com/dmichael/go-multicast/multicast"
+	p "{{.Org}}/{{.ModuleName}}/models"
+)
+
+const (
+	inactivityTimeout = time.Duration(2) * time.Minute
+	heartbeatInterval = time.Duration(10) * time.Second
+	maxDatagramSize = 1024
+)
+
+type NeighborState struct {
+	id string
+	state *p.State
+	discoveredAt time.Time
+	updatedAt time.Time
+	lastHeartBeatAt time.Time
+	stateChangedAt time.Time
+	active bool
+}
+
+type {{.ImplementationName}} struct {
+	id string
+	state *p.State
+	mcastAddr string
+	mcastConn *net.UDPConn
+	receiveChannel chan *p.NeighborUpdate
+	hbChannel chan *p.NeighborHeartBeat
+	neighborState map[string]*NeighborState
+}
+
+func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
+	this.id = id
+	this.state = &p.State{}
+	this.mcastAddr = mcastAddr
+
+	conn, err := multicast.NewBroadcaster(this.mcastAddr)
+	if err != nil {
+		return err
+	}
+	this.mcastConn = conn
+
+	this.receiveChannel = make(chan *p.NeighborUpdate, 10)
+	this.hbChannel = make(chan *p.NeighborHeartBeat, 10)
+
+	this.neighborState = map[string]*NeighborState{}
+
+	{{ range $Name, $Value := .InitialState -}}
+	{{ if (isString $Name) -}}
+	this.state.{{protoName $Name}} = "{{$Value}}"
+	{{ else -}}
+	this.state.{{protoName $Name}} = {{$Value}}
+	{{ end -}}
+	{{- end }}
+	return nil
+}
+
+func (this *{{.ImplementationName}}) EventHandler(ctx context.Context) {
+	heartbeatTicker := time.NewTicker(heartbeatInterval)
+	for {
+		select {
+		case s := <-this.receiveChannel:
+			_, ok := this.neighborState[s.Id]
+			if !ok {
+				this.neighborState[s.Id] = &NeighborState{
+					id: s.Id,
+					discoveredAt: time.Now(),
+					active: true,
+					stateChangedAt: time.Now(),
+				}
+			}
+			this.neighborState[s.Id].state = &p.State{
+				{{ range $Name, $Type := .Variables -}}
+					{{ $pName := (protoName $Name) }}
+					{{$pName}}: s.State.{{$pName}},
+				{{- end }}
+			}
+			this.neighborState[s.Id].updatedAt = time.Now()
+			this.evaluateNeighborStates()
+			this.updateLocalState()
+			_, err := this.broadcastLocalState()
+			if err != nil {
+				log.Errorf("Error broadcasting local state to neighbors")
+			}
+		case s := <-this.hbChannel:
+			_, ok := this.neighborState[s.Id]
+			if !ok {
+				this.neighborState[s.Id] = &NeighborState{
+					id: s.Id,
+					discoveredAt: time.Now(),
+					active: true,
+					stateChangedAt: time.Now(),
+					updatedAt: time.Now(),
+				}
+			}
+			this.neighborState[s.Id].lastHeartBeatAt = time.Now()
+			this.evaluateNeighborStates()
+			if stateChanged := this.updateLocalState(); stateChanged {
+				this.broadcastLocalState()
+			}
+		case <-heartbeatTicker.C:
+			this.sendHeartBeat()
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (this *{{.ImplementationName}}) evaluateNeighborStates() {
+	for id, nbr := range this.neighborState {
+		if nbr.updatedAt.Add(inactivityTimeout).Before(time.Now()) {
+			nbr.active = false
+			nbr.stateChangedAt = time.Now()
+			log.Warnf("neighbor %s became inactive at %s", id, time.Now())
+		} else {
+			if !nbr.active {
+				log.Infof("neighbor %s became active at %s", id, time.Now())
+			}
+			nbr.active = true
+			nbr.stateChangedAt = time.Now()
+		}
+		log.Debugf("state: %s: (%v) -> %+v", id, nbr.active, nbr.state)
+	}
+}
+
+func (this *{{.ImplementationName}}) isNeighborUp(id string) bool {
+	nbr, ok := this.neighborState[id]
+	if !ok {
+		return false
+	}
+	return nbr.active
+}
+
+func (this *{{.ImplementationName}}) updateLocalState() bool {
+	stateChanged := false
+
+	return stateChanged
+}
+
+func (this *{{.ImplementationName}}) broadcastLocalState() (int, error) {
+	updMessage := &p.NeighborUpdate{
+		Id: this.id,
+		State: &p.State{
+			{{ range $Name, $Type := .Variables -}}
+				{{ $pName := (protoName $Name) }}
+                {{$pName}}: this.state.{{$pName}},
+			{{- end }}
+		},
+	}
+	broadcastMessage := &p.BroadcastMessage{
+		Type: p.MessageType_StateUpdate,
+		Src: this.id,
+		Msg:  &p.BroadcastMessage_Upd{updMessage},
+	}
+
+	return this.send(broadcastMessage)
+}
+
+func (this *{{.ImplementationName}}) sendHeartBeat() (int, error) {
+	hbMessage := &p.NeighborHeartBeat{
+		Id: this.id,
+		SentAt: time.Now().Unix(),
+	}
+	broadcastMessage := &p.BroadcastMessage{
+		Type: p.MessageType_Heartbeat,
+		Src: this.id,
+		Msg:  &p.BroadcastMessage_Hb{hbMessage},
+	}
+
+	return this.send(broadcastMessage)
+}
+
+func (this *{{.ImplementationName}}) send(msg *p.BroadcastMessage) (int, error) {
+	log.Debugf("Sending: %+v", msg)
+	data, err := proto.Marshal(msg)
+	if err != nil {
+		return 0, err
+	}
+	return this.mcastConn.Write(data)
+}
+
+func (this *color) msgHandler(src *net.UDPAddr, n int, b []byte) {
+	log.Debugf("received message (%d bytes) from %s", n, src.String())
+	broadcastMessage := &p.BroadcastMessage{}
+	err := proto.Unmarshal(b[:n], broadcastMessage)
+	if err != nil {
+		log.Errorf("error unmarshalling proto from src %s: %s", src.String(), err)
+		return
+	}
+	log.Debugf("received: %+v", broadcastMessage)
+	if broadcastMessage.Src == this.id {
+		return
+	}
+	switch broadcastMessage.Type {
+	case p.MessageType_Heartbeat:
+		this.hbChannel <- broadcastMessage.GetHb()
+	case p.MessageType_StateUpdate:
+		this.receiveChannel <- broadcastMessage.GetUpd()
+	default:
+		log.Errorf("invalid message type")
+	}
+}
+
+func (this *{{.ImplementationName}}) Listener(ctx context.Context) {
+	addr, err := net.ResolveUDPAddr("udp4", this.mcastAddr)
+	if err != nil {
+		log.Errorf("Error resolving mcast address: %s", err)
+		return
+	}
+
+	conn, err := net.ListenMulticastUDP("udp4", nil, addr)
+	if err != nil {
+		log.Errorf("Error connecting to mcast address: %s", err)
+	}
+
+	conn.SetReadBuffer(maxDatagramSize)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			buffer := make([]byte, maxDatagramSize)
+			numBytes, src, err := conn.ReadFromUDP(buffer)
+			if err != nil {
+				log.Fatal("ReadFromUDP failed:", err)
+			}
+			this.msgHandler(src, numBytes, buffer)
+		}
+	}
+}

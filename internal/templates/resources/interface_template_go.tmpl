@@ -1,0 +1,20 @@
+package {{.PackageName}}
+
+import (
+	"context"
+)
+
+type {{.InterfaceName}} interface {
+	EventHandler(context.Context)
+	Listener(context.Context)
+}
+
+func New{{.InterfaceName}}(id string, mcast string) ({{.InterfaceName}}, error) {
+	x := &{{.ImplementationName}}{}
+	err := x.init(id, mcast)
+	if err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
