@@ -20,13 +20,13 @@ func TestTemplateManager_Render(t *testing.T) {
 		InterfaceName:      "Color",
 		ImplementationName: "color",
 		Variables: map[string]string{
-			"parent":  "string",
-			"root":    "string",
+			"parent":   "string",
+			"root":     "string",
 			"is_green": "bool",
 		},
 		InitialState: map[string]interface{}{
-			"parent":  "abcdef",
-			"root":    "00000",
+			"parent":   "abcdef",
+			"root":     "00000",
 			"is_green": true,
 		},
 	}
