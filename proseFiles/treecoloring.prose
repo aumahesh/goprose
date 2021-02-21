@@ -1,0 +1,31 @@
+program TreeColoring
+
+sensor j
+
+var
+
+public boolean up.j;
+public int P.j;
+public int root.j;
+public boolean color.j;
+
+begin
+
+((color.j == 1) && ((copy.[P.j].up == FALSE) || (copy.[P.j].color == 0))) -> color.j = 0;
+
+|
+
+((color.j == 0) && (forall k : k in N.j: copy.[k].P !=  j)) -> color.j = 1; P.j = j; root.j = j;
+
+|
+
+((root.j < copy.[k].root) &&  (color.j == 1)  && (copy.[k].color == 1)) -> P.j = k; root.j = copy.[k].root;
+
+end
+
+init
+state
+up.j = TRUE;
+P.j = j;
+root.j = j;
+color.j = 1;

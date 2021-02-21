@@ -9,7 +9,7 @@ import (
 
 func TestTemplateManager_Render(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	tpl, err := NewTemplateManager("./tmp")
+	tpl, err := NewTemplateManager("../../generatedPackages/")
 	assert.Nil(t, err)
 	assert.NotNil(t, tpl)
 

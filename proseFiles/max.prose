@@ -1,0 +1,15 @@
+program max
+
+sensor j
+
+var
+
+public int x.j;
+
+begin
+
+	(x.k > x.j) -> x.j = x.k;
+
+end
+
+init state x.j = j;

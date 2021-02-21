@@ -18,3 +18,4 @@ test: fmt test
 
 clean:
 	rm -rf bin/
+	rm -rf internal/templates/tmp/
