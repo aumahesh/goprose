@@ -10,44 +10,44 @@ type Program struct {
 	Name                 *string                `"program" @Ident`
 	Sensor               *string                `"sensor" @Ident`
 	VariableDeclarations []*VariableDeclaration `"var" @@ ";" ( ( @@ ";" )* )?`
-	Statements           []*Statement           `"begin" @@ ";" ( ( "|" @@ ";" )* )? "end"`
-	InitialState         []*Assignment          `( "init" "state" ( @@  ";" )+ )?`
+	Statements           []*Statement           `"begin" @@ ( ( "|" @@ )* )? "end"`
+	InitialState         []*Assignment          `( "init" "state" ( @@ )+ )?`
 }
 
 type VariableDeclaration struct {
 	Pos lexer.Position
 
-	Access *string        `@ ( "public" | "private" )?`
-	Type   *string        `@ ( "int" | "string" | "bool" )`
-	Name   *LocalVariable `@@`
+	Access *string   `@ ( "public" | "private" )?`
+	Type   *string   `@ ( "int" | "string" | "bool" )`
+	Name   *Variable `@@`
 }
 
-type LocalVariable struct {
+type Variable struct {
 	Pos lexer.Position
 
-	Identifier *string `@Ident`
-	Source     *string `("." @Ident)?`
+	Identifier *string         `@Ident`
+	Source     *VariableSource `("." @@)`
 }
 
-type CopyVariable struct {
+type VariableSource struct {
 	Pos lexer.Position
 
-	Source     *LocalVariable `"copy" "." "[" @@ "]"`
-	Identifier *string        `@Ident`
+	Identifier *string   `@Ident`
+	Variable   *Variable `| "(" @@ ")"`
 }
 
 type Statement struct {
 	Pos lexer.Position
 
-	Guard      *Guard      `"(" @@ ")" "->"`
-	Assignment *Assignment `@@`
+	Guard       *Guard        `@@ "-" ">"`
+	Assignments []*Assignment `( @@ )+`
 }
 
 type BinaryGuard struct {
 	Pos lexer.Position
 
 	Left     *Expression `@@`
-	Operator *string     `@( ">" | "<" | "==" | "!=" | ">=" | "<=" )`
+	Operator *string     `@( ">" | "<" | "=" "=" | "!" "=" | ">" "=" | "<" "=" )`
 	Right    *Expression `@@`
 }
 
@@ -63,57 +63,47 @@ type ForAllGuard struct {
 type ConjunctionGuard struct {
 	Pos lexer.Position
 
-	Left  *Guard `@@ "&&"`
-	Right *Guard `@@`
+	Left     *Guard  `@@ "&" "&"`
+	Right    *Guard  `@@`
 }
 
 type DisjunctionGuard struct {
 	Pos lexer.Position
 
-	Left  *Guard `@@ "||"`
-	Right *Guard `@@`
+	Left     *Guard  `@@ "|" "|"`
+	Right    *Guard  `@@`
 }
 
 type Guard struct {
 	Pos lexer.Position
 
-	Expression       *Expression       `@@`
-	NegateGuard      *Guard            `| "!" @@`
-	BinaryGuard      *BinaryGuard      `| @@`
-	ForAllGuard      *ForAllGuard      `| @@`
-	ConjunctionGuard *ConjunctionGuard `| @@`
-	DisjunctionGuard *DisjunctionGuard `| @@`
-	ParenthesisGuard *Guard            `| "(" @@ ")"`
+	// ParenthesisGuard   *Guard              `"(" @@ ")"`
+	// ConjunctionGuard *ConjunctionGuard `| @@`
+	// DisjunctionGuard *DisjunctionGuard `| @@`
+	// NegateGuard        *Guard              `| "!" @@`
+	// BinaryGuard        *BinaryGuard        `| @@`
+	// ForAllGuard        *ForAllGuard        `| @@`
+	// Expression         *Expression         `| @@`
+
+	ParenthesisGuard   *Guard              `"(" @@ ")"`
+	BinaryGuard        *BinaryGuard        `| @@`
+	Expression         *Expression         `| @@`
 }
 
 type Assignment struct {
 	Pos lexer.Position
 
-	Variable   *string     `@Ident "="`
-	Expression *Expression `@@`
+	Variables   []*Variable   `@@ ( ( "," @@ )* )? "="`
+	Expressions []*Expression `@@ ( ( "," @@ )* )? ";"`
 }
 
 type Operand struct {
 	Pos lexer.Position
 
 	IntValue    *int    `@Number`
-	BoolTrue    *bool   `| @True`
-	BoolFalse   *bool   `| @False`
+	BoolValue    *string `| @ ( "true" | "false" )`
 	StringValue *string `| @String`
-}
-
-type Variable struct {
-	Pos lexer.Position
-
-	CopyIdentifier *CopyVariable  `@@`
-	LocalVariable  *LocalVariable `@@`
-}
-
-type UnaryExpression struct {
-	Pos lexer.Position
-
-	UnaryOperator *string     `@ "not"`
-	Expression    *Expression `@@`
+	Identifier *string `| @Ident`
 }
 
 type BinaryExpression struct {
@@ -127,9 +117,13 @@ type BinaryExpression struct {
 type Expression struct {
 	Pos lexer.Position
 
-	Operand               *Operand          `@@`
-	Variable              *Variable         `| @@`
-	UniaryExpression      *UnaryExpression  `| @@`
-	BinaryExpression      *BinaryExpression `| @@`
-	ParenthesisExpression *Expression       `| "(" @@ ")"`
+	// ParenthesisExpression *Expression       `"(" @@ ")"`
+	// NegateExpression      *Expression       `| "!" @@`
+	// BinaryExpression      *BinaryExpression `| @@`
+	// Variable              *Variable         `| @@`
+	// Operand               *Operand          `| @@`
+
+	Variable              *Variable         `@@`
+	Operand               *Operand          `| @@`
+
 }

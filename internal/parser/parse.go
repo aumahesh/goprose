@@ -22,8 +22,6 @@ func NewProSeParser(programFile string) (*ProSeParser, error) {
 	lex := stateful.MustSimple([]stateful.Rule{
 		{"comment", `(?:#|//)[^\n]*\n?`, nil},
 		{"whitespace", `[ \t\n\r]+`, nil},
-		{"True", `\b[true|on|yes]\b`, nil},
-		{"False", `\b[false|off|no]\b`, nil},
 		{"Punct", `[-[!%&*()+_=\|:;"<,>.?/]|]`, nil},
 		{"Number", `[-+]?\d+`, nil},
 		{"Ident", `[a-zA-Z_][a-zA-Z0-9_]*`, nil},
@@ -42,9 +40,8 @@ func NewProSeParser(programFile string) (*ProSeParser, error) {
 func (p *ProSeParser) Parse() error {
 	parser := participle.MustBuild(p.program,
 		participle.Lexer(p.lex),
-		participle.CaseInsensitive("True", "False"),
-		participle.Unquote("String"),
-		participle.UseLookahead(2),
+		// participle.Unquote("String"),
+		participle.UseLookahead(4),
 	)
 	r, err := os.Open(p.programFile)
 	if err != nil {

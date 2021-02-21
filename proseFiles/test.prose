@@ -1,0 +1,17 @@
+program test
+
+sensor j
+
+var
+
+public int x.j;
+private bool tmp.j;
+string msg.j;
+
+begin
+
+	true -> tmp.j = true;
+
+end
+
+init state x.j = 1;
