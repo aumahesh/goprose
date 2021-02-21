@@ -8,6 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/aumahesh/goprose/internal/intermediate"
 	"github.com/aumahesh/goprose/internal/util"
 )
 
@@ -33,53 +34,29 @@ var (
 	}
 )
 
-type ProseProgram struct {
-	Org                string
-	ModuleName         string
-	PackageName        string
-	InterfaceName      string
-	ImplementationName string
-	Variables          map[string]string
-	InitialState       map[string]interface{}
-}
-
-func (pv *ProseProgram) GetType(key string) (string, error) {
-	v, ok := pv.Variables[key]
-	if !ok {
-		return "", fmt.Errorf("%s not found", key)
-	}
-	return v, nil
-}
-
-func (pv *ProseProgram) IsType(key string, tgt string) bool {
-	t, err := pv.GetType(key)
-	if err != nil {
-		return false
-	}
-	return t == tgt
-}
-
 type TemplateManager struct {
-	outputPath string
+	outputPath   string
+	intermediate *intermediate.Program
 }
 
-func NewTemplateManager(outputPath string) (*TemplateManager, error) {
+func NewTemplateManager(outputPath string, program *intermediate.Program) (*TemplateManager, error) {
 	t := &TemplateManager{
-		outputPath: outputPath,
+		outputPath:   outputPath,
+		intermediate: program,
 	}
 	return t, nil
 }
 
-func (t *TemplateManager) getFileName(fileType ftype, pv *ProseProgram) string {
+func (t *TemplateManager) getFileName(fileType ftype) string {
 	switch fileType {
 	case goModFile:
 		return fmt.Sprintf("%s/go.mod", t.outputPath)
 	case stateProtoFile:
 		return fmt.Sprintf("%s/proto/state.proto", t.outputPath)
 	case interfaceFile:
-		return fmt.Sprintf("%s/%s/%s_intf.go", t.outputPath, pv.PackageName, pv.InterfaceName)
+		return fmt.Sprintf("%s/%s/%s_intf.go", t.outputPath, t.intermediate.PackageName, t.intermediate.InterfaceName)
 	case implementationFile:
-		return fmt.Sprintf("%s/%s/%s_impl.go", t.outputPath, pv.PackageName, pv.ImplementationName)
+		return fmt.Sprintf("%s/%s/%s_impl.go", t.outputPath, t.intermediate.PackageName, t.intermediate.ImplementationName)
 	case mainFile:
 		return fmt.Sprintf("%s/cmd/main.go", t.outputPath)
 	case makeFile:
@@ -88,14 +65,14 @@ func (t *TemplateManager) getFileName(fileType ftype, pv *ProseProgram) string {
 	return ""
 }
 
-func (t *TemplateManager) Render(pv *ProseProgram) error {
+func (t *TemplateManager) Render() error {
 	os.MkdirAll(fmt.Sprintf("%s/proto", t.outputPath), 0777)
-	os.MkdirAll(fmt.Sprintf("%s/%s", t.outputPath, pv.PackageName), 0777)
+	os.MkdirAll(fmt.Sprintf("%s/%s", t.outputPath, t.intermediate.PackageName), 0777)
 	os.MkdirAll(fmt.Sprintf("%s/cmd", t.outputPath), 0777)
 
 	tplFuncs := template.FuncMap{
 		"isString": func(key string) bool {
-			return pv.IsType(key, "string")
+			return t.intermediate.IsType(key, "string")
 		},
 		"increment": func(c int) int {
 			return c + 1
@@ -108,13 +85,13 @@ func (t *TemplateManager) Render(pv *ProseProgram) error {
 		if err != nil {
 			return err
 		}
-		outfile := t.getFileName(fileType, pv)
+		outfile := t.getFileName(fileType)
 		log.Debugf("Render template %s at %s", tpl.Name(), outfile)
 		f, err := os.Create(outfile)
 		if err != nil {
 			return err
 		}
-		err = tpl.Execute(f, pv)
+		err = tpl.Execute(f, t.intermediate)
 		if err != nil {
 			return err
 		}

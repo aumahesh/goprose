@@ -5,6 +5,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/aumahesh/goprose/internal/intermediate"
 	"github.com/aumahesh/goprose/internal/parser"
 	"github.com/aumahesh/goprose/internal/templates"
 )
@@ -26,13 +27,23 @@ func main() {
 		panic(err)
 	}
 
-	log.Infof("GoProse: generating code at %s", *targetFolder)
-	codeGenerator, err := templates.NewTemplateManager(*targetFolder)
+	log.Infof("GoProse: generating intemediate program")
+	parsedProgram, err := parser.GetParsedProgram()
+	if err != nil {
+		panic(err)
+	}
+	intermediateProgram, err := intermediate.GenerateIntermediateProgram(parsedProgram)
 	if err != nil {
 		panic(err)
 	}
 
-	err = codeGenerator.Render(&templates.ProseProgram{})
+	log.Infof("GoProse: generating code at %s", *targetFolder)
+	codeGenerator, err := templates.NewTemplateManager(*targetFolder, intermediateProgram)
+	if err != nil {
+		panic(err)
+	}
+
+	err = codeGenerator.Render()
 	if err != nil {
 		panic(err)
 	}

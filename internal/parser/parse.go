@@ -63,3 +63,10 @@ func (p *ProSeParser) Parse() error {
 	}
 	return err
 }
+
+func (p *ProSeParser) GetParsedProgram() (*Program, error) {
+	if p.error == nil {
+		return p.program, nil
+	}
+	return nil, p.error
+}
