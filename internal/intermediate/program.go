@@ -33,5 +33,14 @@ func (pv *Program) IsType(key string, tgt string) bool {
 }
 
 func GenerateIntermediateProgram(parsedProgram *parser.Program) (*Program, error) {
-	return nil, fmt.Errorf("not implemented")
+	g := &translator{
+		parsedProgram:       parsedProgram,
+		intermediateProgram: &Program{},
+		tempsManager:        NewTempsManager(),
+	}
+	err := g.do()
+	if err != nil {
+		return nil, err
+	}
+	return g.intermediateProgram, nil
 }
