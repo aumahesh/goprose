@@ -4,8 +4,8 @@ sensor j
 
 var
 
-public bool up.j, color.j;
-public int P.j, root.j;
+public bool up.j = true;
+public int P.j, root.j, color.j = j, j, 1;
 
 begin
 
@@ -20,9 +20,3 @@ begin
 (root.j < root.k) &&  (color.j == 1)  && (color.k == 1) -> P.j, root.j = k, root.k;
 
 end
-
-init state
-up.j = TRUE;
-P.j = j;
-root.j = j;
-color.j = 1;

@@ -6,7 +6,7 @@ import "rand"
 sensor j
 
 const
-	int X, Y, Z, S, W, OnThreshold, OffThreshold;
+	int X, Y, Z, S, W, OnThreshold, OffThreshold = 10, 20, 30, 40, 50, 100, 200;
 
 var
 	public int st.j; // 1- sleep, 2- probe, 3- awake, 4- readyoff

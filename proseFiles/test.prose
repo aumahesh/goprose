@@ -6,14 +6,14 @@ import "github.com/aumahesh/detect"
 sensor j
 
 const
-int a;
+int a = 20;
 
 
 var
 
-public int x.j;
-private bool tmp.j;
-string msg.j;
+public int x.j = 100 + 500;
+private bool tmp.j = true;
+string msg.j = "Hello, World!";
 public int st.j; // 1- sleep, 2- probe, 3- awake, 4- readyoff
 private int timer.j;
 
@@ -22,8 +22,3 @@ begin
 (st.j == 1) && (timer.j >= a) -> st.j = 2; timer.j = 0;
 
 end
-
-init state
-msg.j = "Hello, world!"
-tmp.j = detect.present("a", 1, true, x.j+10, coverage.Cover())
-x.j = (10 + 1) * 30

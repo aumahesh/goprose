@@ -4,12 +4,10 @@ sensor j
 
 var
 
-public int x.j;
+public int x.j = j;
 
 begin
 
 	(x.k > x.j) -> x.j = x.k;
 
 end
-
-init state x.j = j;

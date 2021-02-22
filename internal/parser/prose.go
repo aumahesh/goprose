@@ -14,10 +14,13 @@ import_stmt		::= "import" "\"" \import_name "\""
 import_name		::= ident | ident "." import_name
 consts			::= "consts" constsdec
 constsdec		::= constdec ";" | constdec ";" constsdec
-constdec		::= type ident
+constdec		::= type constlist constvalues
+constlist		::= ident | ident "," constlist
+values			::= /empty/ | "=" valuelist
+valuelist		::= expr | expr "," valuelist
 vars			::= "vars" varsdec
 varsdec			::= vardec ";" | vardec ";" varsdec
-vardec			::= access type varlist
+vardec			::= access type varlist values
 varlist			::= variable | variable "," varlist
 variable		::= ident source
 source			::= /empty/ | "." variable | "." "(" variable ")
@@ -25,7 +28,6 @@ access			::= /empty/ | "public" | "private"
 type			::= "int" | "string" | "bool"
 statements		::= statement | statement "|" statements
 statement		::= expr "->" assignments
-initialstate	::= /empty/ | "init" "state" assignments
 assignments		::= assignment ";" | assignment ";" assignments
 assignment		::= var_list "=" expr_list
 var_list		::= variable | variable "," var_list
@@ -58,7 +60,6 @@ type Program struct {
 	ConstDeclarations    []*ConstDeclaration    `("const" ( @@ ";" )+ )?`
 	VariableDeclarations []*VariableDeclaration `"var" @@ ";" ( ( @@ ";" )* )?`
 	Statements           []*Statement           `"begin" @@ ( ( "|" @@ )* )? "end"`
-	InitialState         []*Assignment          `( "init" "state" ( @@ )+ )?`
 }
 
 type ConstDeclaration struct {
@@ -66,6 +67,7 @@ type ConstDeclaration struct {
 
 	VariableType *string     `@("int" | "string" | "bool")`
 	Ids          []*Variable `@@ ( ( "," @@ )* )?`
+	Values       []*Expr     `( "=" @@ ( ( "," @@ )* )? )?`
 }
 
 type VariableDeclaration struct {
@@ -74,6 +76,7 @@ type VariableDeclaration struct {
 	Access       *string     `@("public" | "private")?`
 	VariableType *string     `@("int" | "string" | "bool")`
 	Ids          []*Variable `@@ ( ( "," @@ )* )?`
+	Values       []*Expr     `( "=" @@ ( ( "," @@ )* )? )?`
 }
 
 type Variable struct {
