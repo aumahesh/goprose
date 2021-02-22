@@ -4,6 +4,46 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 )
 
+/*
+program			::= name sensor imports varsdec "begin" statements "end" initialstate
+name			::= "program" ident
+sensor			::= "sensor" ident
+imports			::= /empty/ | import_list
+import_list		::= import_stmt ";" | import_stmt ";" import_list
+import_stmt		::= "import" import_name
+import_name		::= ident | ident "." import_name
+varsdec			::= vardec ";" | vardec ";" varsdec
+vardec			::= access type variable
+variable		::= ident source
+source			::= /empty/ | "." variable | "." "(" variable ")
+access			::= /empty/ | "public" | "private"
+type			::= "int" | "string" | "bool"
+statements		::= statement | statement "|" statements
+statement		::= expr "->" assignments
+initialstate	::= /empty/ | "init" "state" assignments
+assignments		::= assignment ";" | assignment ";" assignments
+assignment		::= var_list "=" expr_list
+var_list		::= variable | variable "," var_list
+expr_list		::= expr | expr "," expr_list
+expr			::= intconst
+				 |  string
+				 |  "true"
+				 | 	"false"
+				 |  variable
+				 |  unop expr
+				 |  expr binop expr
+				 |  function_call
+				 |  forall
+				 |  "(" expr ")"
+function_call	::= import_name "." ident "(" arg_list ")"
+arg_list		::= /empty/ | var_list
+forall			::= "forall" ident ":" ident "in" expr ":" expr
+unop			::= "!" | "-"
+binop			::= "+" | "-" | "*" | "/" | "%"
+				 |  "<" | ">" | "==" | "!=" | "<=" | ">="
+				 |  "&&" | "||"
+*/
+
 type Program struct {
 	Pos lexer.Position
 
@@ -17,113 +57,121 @@ type Program struct {
 type VariableDeclaration struct {
 	Pos lexer.Position
 
-	Access *string   `@ ( "public" | "private" )?`
-	Type   *string   `@ ( "int" | "string" | "bool" )`
-	Name   *Variable `@@`
+	Access       *string   `@("public" | "private")?`
+	VariableType *string   `@("int" | "string" | "bool")`
+	Id           *Variable `@@`
 }
 
 type Variable struct {
 	Pos lexer.Position
 
-	Identifier *string         `@Ident`
-	Source     *VariableSource `("." @@)`
+	Id     *string         `@Ident`
+	Source *VariableSource `("." @@)?`
 }
 
 type VariableSource struct {
 	Pos lexer.Position
 
-	Identifier *string   `@Ident`
-	Variable   *Variable `| "(" @@ ")"`
+	Source         *string `@Ident`
+	VariableId     *string `| ( "(" @Ident`
+	VariableSource *string `"." @Ident ")" )?`
 }
 
 type Statement struct {
 	Pos lexer.Position
 
-	Guard       *Guard        `@@ "-" ">"`
-	Assignments []*Assignment `( @@ )+`
+	Guard   *Expr     `@@ "-" ">"`
+	Actions []*Action `@@ ";" ( ( @@ ";" )* )?`
 }
 
-type BinaryGuard struct {
+type Action struct {
 	Pos lexer.Position
 
-	Left     *Expression `@@`
-	Operator *string     `@( ">" | "<" | "=" "=" | "!" "=" | ">" "=" | "<" "=" )`
-	Right    *Expression `@@`
+	Variable []*Variable `@@ ("," @@)*`
+	Op       *string     `@"="`
+	Expr     []*Expr     `@@ ("," @@)*`
 }
 
-type ForAllGuard struct {
+type Expr struct {
 	Pos lexer.Position
 
-	LoopIdentifier  *string   `"forall" @Ident ":"`
-	LoopIdentifier2 *string   `@Ident "in"`
-	LoopOver        *Variable `@@ ":"`
-	Guard           *Guard    `@@`
-}
-
-type ConjunctionGuard struct {
-	Pos lexer.Position
-
-	Left     *Guard  `@@ "&" "&"`
-	Right    *Guard  `@@`
-}
-
-type DisjunctionGuard struct {
-	Pos lexer.Position
-
-	Left     *Guard  `@@ "|" "|"`
-	Right    *Guard  `@@`
-}
-
-type Guard struct {
-	Pos lexer.Position
-
-	// ParenthesisGuard   *Guard              `"(" @@ ")"`
-	// ConjunctionGuard *ConjunctionGuard `| @@`
-	// DisjunctionGuard *DisjunctionGuard `| @@`
-	// NegateGuard        *Guard              `| "!" @@`
-	// BinaryGuard        *BinaryGuard        `| @@`
-	// ForAllGuard        *ForAllGuard        `| @@`
-	// Expression         *Expression         `| @@`
-
-	ParenthesisGuard   *Guard              `"(" @@ ")"`
-	BinaryGuard        *BinaryGuard        `| @@`
-	Expression         *Expression         `| @@`
+	Assignment *Assignment `@@`
 }
 
 type Assignment struct {
 	Pos lexer.Position
 
-	Variables   []*Variable   `@@ ( ( "," @@ )* )? "="`
-	Expressions []*Expression `@@ ( ( "," @@ )* )? ";"`
+	Equality *Equality `@@`
+	Op       string    `( @"="`
+	Next     *Equality `  @@ )?`
 }
 
-type Operand struct {
+type Equality struct {
 	Pos lexer.Position
 
-	IntValue    *int    `@Number`
-	BoolValue    *string `| @ ( "true" | "false" )`
-	StringValue *string `| @String`
-	Identifier *string `| @Ident`
+	Logical *Logical  `@@`
+	Op      string    `[ @( "!" "=" | "=" "=" )`
+	Next    *Equality `  @@ ]`
 }
 
-type BinaryExpression struct {
+type Logical struct {
 	Pos lexer.Position
 
-	Left     *Expression `@@`
-	Operator *string     `@( "+" | "-" | "*" | "/" | "%" )`
-	Right    *Expression `@@`
+	Comparison *Comparison `@@`
+	Op         string      `[ @( "&" "&" | "|" "|" )`
+	Next       *Logical    `  @@ ]`
 }
 
-type Expression struct {
+type Comparison struct {
 	Pos lexer.Position
 
-	// ParenthesisExpression *Expression       `"(" @@ ")"`
-	// NegateExpression      *Expression       `| "!" @@`
-	// BinaryExpression      *BinaryExpression `| @@`
-	// Variable              *Variable         `| @@`
-	// Operand               *Operand          `| @@`
+	Addition *Addition   `@@`
+	Op       string      `[ @( ">" "=" | ">" | "<" "=" | "<" )`
+	Next     *Comparison `  @@ ]`
+}
 
-	Variable              *Variable         `@@`
-	Operand               *Operand          `| @@`
+type Addition struct {
+	Pos lexer.Position
 
+	Multiplication *Multiplication `@@`
+	Op             string          `[ @( "-" | "+" )`
+	Next           *Addition       `  @@ ]`
+}
+
+type Multiplication struct {
+	Pos lexer.Position
+
+	Unary *Unary          `@@`
+	Op    string          `[ @( "/" | "*" )`
+	Next  *Multiplication `  @@ ]`
+}
+
+type Unary struct {
+	Pos lexer.Position
+
+	Op      string   `( @( "!" | "-" )`
+	Unary   *Unary   `  @@ )`
+	Primary *Primary `| @@`
+}
+
+type ForAllExpr struct {
+	Pos lexer.Position
+
+	// forall k : k in nbrs.j: P.k !=  j
+
+	LoopVariable  *string   `@Ident ":"`
+	LoopVariable2 *string   `@Ident "in"`
+	LoopOver      *Variable `@@ ":"`
+	Expr          *Expr     `@@`
+}
+
+type Primary struct {
+	Pos lexer.Position
+
+	NumberValue   *int        `@Number`
+	StringValue   *string     `| @String`
+	BoolValue     *string     `| @ ("true" | "false")`
+	ForAll        *ForAllExpr `| "forall" @@`
+	Id            *Variable   `| @@`
+	SubExpression *Expr       `| "(" @@ ")"`
 }

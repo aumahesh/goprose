@@ -40,7 +40,7 @@ func NewProSeParser(programFile string) (*ProSeParser, error) {
 func (p *ProSeParser) Parse() error {
 	parser := participle.MustBuild(p.program,
 		participle.Lexer(p.lex),
-		// participle.Unquote("String"),
+		participle.Unquote("String"),
 		participle.UseLookahead(4),
 	)
 	r, err := os.Open(p.programFile)

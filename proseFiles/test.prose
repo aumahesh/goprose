@@ -10,8 +10,8 @@ string msg.j;
 
 begin
 
-	true -> tmp.j = true;
+	((tmp.j == true) || ((x.j > 0) && (x.j < 10))) -> x.j, tmp.j = 1, false;
 
 end
 
-init state x.j = 1;
+init state msg = "Hello, world!"

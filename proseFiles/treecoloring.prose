@@ -11,15 +11,15 @@ public bool color.j;
 
 begin
 
-((color.j == 1) && ((up.(p.j) == FALSE) || (color.(P.j) == 0))) -> color.j = 0;
+(color.j == 1) && (up.(p.j) == FALSE || color.(P.j) == 0) -> color.j = 0;
 
 |
 
-((color.j == 0) && (forall k : k in nbrs.j: P.k !=  j)) -> color.j = 1; P.j = j; root.j = j;
+(color.j == 0) && (forall k : k in nbrs.j: P.k !=  j) -> color.j = 1; P.j = j; root.j = j;
 
 |
 
-((root.j < root.k) &&  (color.j == 1)  && (color.k == 1)) -> P.j = k; root.j = root.k;
+(root.j < root.k) &&  (color.j == 1)  && (color.k == 1) -> P.j, root.j = k, root.k;
 
 end
 

@@ -10,7 +10,7 @@ import (
 func TestProSeParser_Parse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
-	p, err := NewProSeParser("../../proseFiles/max.prose")
+	p, err := NewProSeParser("../../proseFiles/test.prose")
 	assert.Nil(t, err)
 	if err != nil {
 		t.FailNow()
