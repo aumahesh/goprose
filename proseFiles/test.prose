@@ -6,7 +6,7 @@ import "github.com/aumahesh/detect"
 sensor j
 
 const
-string a, b;
+int a;
 
 
 var
@@ -14,10 +14,12 @@ var
 public int x.j;
 private bool tmp.j;
 string msg.j;
+public int st.j; // 1- sleep, 2- probe, 3- awake, 4- readyoff
+private int timer.j;
 
 begin
 
-	((tmp.j == true) || ((x.j > 0) && (x.j < 10))) -> x.j, tmp.j = 1, false;
+(st.j == 1) && (timer.j >= a) -> st.j = 2; timer.j = 0;
 
 end
 

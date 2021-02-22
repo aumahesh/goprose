@@ -190,9 +190,9 @@ type FuncCall struct {
 type Primary struct {
 	Pos lexer.Position
 
-	NumberValue   int         `@Number`
-	StringValue   string      `| @String`
-	BoolValue     string      `| @ ("true" | "false")`
+	NumberValue   *int        `@Number`
+	StringValue   *string     `| @String`
+	BoolValue     *string     `| @ ("true" | "false")`
 	FuncCall      *FuncCall   `| @@`
 	ForAll        *ForAllExpr `| "forall" @@`
 	Id            *Variable   `| @@`
