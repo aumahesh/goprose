@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
@@ -10,13 +11,26 @@ import (
 func TestProSeParser_Parse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
-	p, err := NewProSeParser("../../proseFiles/treecoloring.prose")
-	assert.Nil(t, err)
-	if err != nil {
-		t.FailNow()
+	proseFiles := []string{
+		"test.prose",
+		"max.prose",
+		"tree_coloring.prose",
+		"pCover.prose",
+		"distributed_reset.prose",
+		"routing.prose",
+		"pursuer_evader.prose",
 	}
 
-	err = p.Parse()
-	assert.Nil(t, err)
-	assert.True(t, p.parsed)
+	for _, pf := range proseFiles {
+		proseFile := fmt.Sprintf("../../proseFiles/%s", pf)
+		p, err := NewProSeParser(proseFile)
+		assert.Nil(t, err)
+		if err != nil {
+			t.FailNow()
+		}
+
+		err = p.Parse()
+		assert.Nil(t, err)
+		assert.True(t, p.parsed)
+	}
 }

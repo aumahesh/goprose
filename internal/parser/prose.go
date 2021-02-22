@@ -10,7 +10,7 @@ name			::= "program" ident
 sensor			::= "sensor" ident
 imports			::= /empty/ | import_list
 import_list		::= import_stmt | import_stmt import_list
-import_stmt		::= "import" "\"" \import_name "\""
+import_stmt		::= "import" string
 import_name		::= ident | ident "." import_name
 consts			::= "consts" constsdec
 constsdec		::= constdec ";" | constdec ";" constsdec
@@ -178,7 +178,7 @@ type ForAllExpr struct {
 
 	LoopVariable  *string   `@Ident ":"`
 	LoopVariable2 *string   `@Ident "in"`
-	LoopOver      *Variable `@@ ":"`
+	LoopOver      *Expr `@@ ":"`
 	Expr          *Expr     `@@`
 }
 

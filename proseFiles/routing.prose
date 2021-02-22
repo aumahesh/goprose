@@ -1,0 +1,24 @@
+program RoutingTreeMaintenance
+sensor j
+const
+	int CMAX = 100;
+ 	int NULL = 0;
+var
+	public int inv.j, dist.j;
+	public bool up.j;
+	private int p.j;
+begin
+	dist.k < dist.j && up.k && inv.k < CMAX && inv.k < inv.j
+		-> p.j, inv.j = k, inv.k;
+	|
+	dist.k < dist.j && up.k && inv.k+1 < CMAX && inv.k+1 < inv.j
+		-> p.j, inv.j = k, inv.k+1;
+	|
+	p.j != NULL && (!up.(p.j) || inv.(p.j) >= CMAX ||
+		(dist.(p.j) < dist.j && inv.j != inv.(p.j))) ||
+		(dist.(p.j) > dist.j && inv.j != inv.(p.j)+1)
+		-> p.j, inv.j = NULL, CMAX;
+	|
+	p.j == NULL && inv.j < CMAX
+		-> inv.j = CMAX;
+end

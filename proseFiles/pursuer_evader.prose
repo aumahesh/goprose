@@ -1,0 +1,20 @@
+program PursuerEvaderTracking
+import "time"
+import "github.com/aumahesh/detect"
+sensor j
+var
+	public int dist2Evader.j;
+	public int detectTimestamp.j;
+	public int p.j;
+	private bool isEvaderHere.j;
+begin
+	true
+		-> isEvaderHere.j = detect.present();
+	|
+	isEvaderHere.j
+		-> p.j, dist2Evader.j, detectTimestamp.j = j, 0, time.Now();
+	|
+	detectTimestamp.k > detectTimestamp.j ||
+		(detectTimestamp.k == detectTimestamp.j && dist2Evader.k+1 < dist2Evaer.j)
+		-> p.j, dist2Evader.j, detectTimestamp.j = k, dist2Evader.k+1, detectTimestamp.k;
+end

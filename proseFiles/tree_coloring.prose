@@ -1,0 +1,37 @@
+program TreeColoring
+
+import "neighborhood"
+
+sensor j
+
+const
+
+int red = 0;
+int green = 1;
+
+var
+
+public bool up.j = true;
+public int P.j, root.j, color.j = j, j, 1;
+
+begin
+
+(color.j == green) && (!up.(p.j) || color.(P.j) == red) -> color.j = red;
+
+|
+
+(color.j == red) && (forall k : k in neighborhood.neighbors(): P.k !=  j) -> color.j, P.j, root.j = green, j, j;
+
+|
+
+(root.j < root.k) &&  (color.j == green)  && (color.k == green) -> P.j, root.j = k, root.k;
+
+|
+
+up.j -> up.j = false;
+
+|
+
+!up.j -> up.j, P.j, color.j = true, j, red;
+
+end

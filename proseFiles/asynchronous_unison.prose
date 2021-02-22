@@ -1,0 +1,15 @@
+program Unison
+
+import "neighborhood"
+
+sensor j
+
+const int MAX = 100;
+
+var public int x.j;
+
+begin
+
+(forall k : k in neighborhood.neighbors() : (x.k >= x.j) && (x.j < MAX)) -> x.j = x.j + 1;
+
+end
