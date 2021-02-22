@@ -22,10 +22,10 @@ func NewProSeParser(programFile string) (*ProSeParser, error) {
 	lex := stateful.MustSimple([]stateful.Rule{
 		{"comment", `(?:#|//)[^\n]*\n?`, nil},
 		{"whitespace", `[ \t\n\r]+`, nil},
+		{`String`, `"(?:\\.|[^"])*"`, nil},
 		{"Punct", `[-[!%&*()+_=\|:;"<,>.?/]|]`, nil},
 		{"Number", `[-+]?\d+`, nil},
 		{"Ident", `[a-zA-Z_][a-zA-Z0-9_]*`, nil},
-		{"String", `"(\\"|[^"])*"`, nil},
 	})
 
 	return &ProSeParser{

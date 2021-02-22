@@ -5,15 +5,20 @@ import (
 )
 
 /*
-program			::= name sensor imports varsdec "begin" statements "end" initialstate
+program			::= name sensor imports consts vars "begin" statements "end" initialstate
 name			::= "program" ident
 sensor			::= "sensor" ident
 imports			::= /empty/ | import_list
-import_list		::= import_stmt ";" | import_stmt ";" import_list
-import_stmt		::= "import" import_name
+import_list		::= import_stmt | import_stmt import_list
+import_stmt		::= "import" "\"" \import_name "\""
 import_name		::= ident | ident "." import_name
+consts			::= "consts" constsdec
+constsdec		::= constdec ";" | constdec ";" constsdec
+constdec		::= type ident
+vars			::= "vars" varsdec
 varsdec			::= vardec ";" | vardec ";" varsdec
-vardec			::= access type variable
+vardec			::= access type varlist
+varlist			::= variable | variable "," varlist
 variable		::= ident source
 source			::= /empty/ | "." variable | "." "(" variable ")
 access			::= /empty/ | "public" | "private"
@@ -35,7 +40,7 @@ expr			::= intconst
 				 |  function_call
 				 |  forall
 				 |  "(" expr ")"
-function_call	::= import_name "." ident "(" arg_list ")"
+function_call	::= ident "." ident "(" arg_list ")"
 arg_list		::= /empty/ | var_list
 forall			::= "forall" ident ":" ident "in" expr ":" expr
 unop			::= "!" | "-"
@@ -48,18 +53,27 @@ type Program struct {
 	Pos lexer.Position
 
 	Name                 *string                `"program" @Ident`
+	Packages             []string               `("import" @String )*`
 	Sensor               *string                `"sensor" @Ident`
+	ConstDeclarations    []*ConstDeclaration    `("const" ( @@ ";" )+ )?`
 	VariableDeclarations []*VariableDeclaration `"var" @@ ";" ( ( @@ ";" )* )?`
 	Statements           []*Statement           `"begin" @@ ( ( "|" @@ )* )? "end"`
 	InitialState         []*Assignment          `( "init" "state" ( @@ )+ )?`
 }
 
+type ConstDeclaration struct {
+	Pos lexer.Position
+
+	VariableType *string     `@("int" | "string" | "bool")`
+	Ids          []*Variable `@@ ( ( "," @@ )* )?`
+}
+
 type VariableDeclaration struct {
 	Pos lexer.Position
 
-	Access       *string   `@("public" | "private")?`
-	VariableType *string   `@("int" | "string" | "bool")`
-	Id           *Variable `@@`
+	Access       *string     `@("public" | "private")?`
+	VariableType *string     `@("int" | "string" | "bool")`
+	Ids          []*Variable `@@ ( ( "," @@ )* )?`
 }
 
 type Variable struct {
@@ -165,12 +179,21 @@ type ForAllExpr struct {
 	Expr          *Expr     `@@`
 }
 
+type FuncCall struct {
+	Pos lexer.Position
+
+	PackageId    *string `@Ident "."`
+	FunctionName *string `@Ident`
+	Args         []*Expr `"(" (@@ ( "," @@ )* )? ")"`
+}
+
 type Primary struct {
 	Pos lexer.Position
 
-	NumberValue   *int        `@Number`
-	StringValue   *string     `| @String`
-	BoolValue     *string     `| @ ("true" | "false")`
+	NumberValue   int         `@Number`
+	StringValue   string      `| @String`
+	BoolValue     string      `| @ ("true" | "false")`
+	FuncCall      *FuncCall   `| @@`
 	ForAll        *ForAllExpr `| "forall" @@`
 	Id            *Variable   `| @@`
 	SubExpression *Expr       `| "(" @@ ")"`

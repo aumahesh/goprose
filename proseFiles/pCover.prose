@@ -1,0 +1,32 @@
+program pCover
+
+import "github.com/aumahesh/coverage"
+import "rand"
+
+sensor j
+
+const
+	int X, Y, Z, S, W, OnThreshold, OffThreshold;
+
+var
+	public int st.j; // 1- sleep, 2- probe, 3- awake, 4- readyoff
+	private int timer.j;
+
+begin
+
+(st.j == 1) && (timer.j >= X) -> st.j = 2; timer.j = 0;
+|
+(st.j == 2) && (timer.j >= Y) && (coverage.local() > OnThreshold) -> st.j = 1; timer.j = 0;
+|
+(st.j == 2) && (timer.j >= Y) && (coverage.local() <= OffThreshold) -> st.j = 3; timer.j = rand.RandInt(0, S);
+|
+(st.j == 3) && (timer.j >= Z) -> st.j = 4; timer.j = 0;
+|
+(st.j == 4) && (timer.j >= W) -> st.j = 3; timer.j = rand.RandInt(0, S);
+|
+(st.j == 4) && (coverage.local() > OffThreshold) -> st.j = 1; timer.j = 0;
+|
+((st.j == 1) && (timer.j <= X)) || ((st.j == 2) && (timer.j <= Y)) || ((st.j == 3) && (timer.j <= Z)) || ((st == 4) && (timer.j <= W)) -> timer.j = timer.j + 1;
+
+end
+

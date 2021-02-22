@@ -4,10 +4,8 @@ sensor j
 
 var
 
-public bool up.j;
-public int P.j;
-public int root.j;
-public bool color.j;
+public bool up.j, color.j;
+public int P.j, root.j;
 
 begin
 

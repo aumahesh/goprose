@@ -1,6 +1,13 @@
 program test
 
+import "github.com/aumahesh/coverage"
+import "github.com/aumahesh/detect"
+
 sensor j
+
+const
+string a, b;
+
 
 var
 
@@ -14,4 +21,7 @@ begin
 
 end
 
-init state msg = "Hello, world!"
+init state
+msg.j = "Hello, world!"
+tmp.j = detect.present("a", 1, true, x.j+10, coverage.Cover())
+x.j = (10 + 1) * 30
