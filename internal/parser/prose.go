@@ -176,10 +176,10 @@ type ForAllExpr struct {
 
 	// forall k : k in nbrs.j: P.k !=  j
 
-	LoopVariable  *string   `@Ident ":"`
-	LoopVariable2 *string   `@Ident "in"`
-	LoopOver      *Expr `@@ ":"`
-	Expr          *Expr     `@@`
+	LoopVariable  *string `@Ident ":"`
+	LoopVariable2 *string `@Ident "in"`
+	LoopOver      *Expr   `@@ ":"`
+	Expr          *Expr   `@@`
 }
 
 type FuncCall struct {
