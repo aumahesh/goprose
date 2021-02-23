@@ -87,7 +87,7 @@ func (t *TemplateManager) Render() error {
 			return t.intermediate.IsType(key, "string")
 		},
 		"getConstantType": func(key string) string {
-			t, err := t.intermediate.GetType(key)
+			t, err := t.intermediate.GetConstantType(key)
 			if err != nil {
 				return "int"
 			}

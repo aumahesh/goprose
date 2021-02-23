@@ -153,6 +153,10 @@ func (this *{{.ImplementationName}}) isNeighborUp(id string) bool {
 func (this *{{$.ImplementationName}}) {{$Name}}() bool {
 	stateChanged := false
 
+	{{ range .Code }}
+	{{.}}
+	{{- end }}
+
 	return stateChanged
 }
 {{end }}
