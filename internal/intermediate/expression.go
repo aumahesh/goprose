@@ -313,7 +313,7 @@ func (e *Expression) FunctionCall(funcCall *parser.FuncCall) (string, error) {
 		expr, err := NewExpression(argExpr, e.sensorId, e.constants, e.variables, e.manager)
 		if err != nil {
 			return "", fmt.Errorf("Argument #%d in function call %s.%s failed",
-				index, funcCall.PackageId, funcCall.FunctionName)
+				index, StringValue(funcCall.PackageId), StringValue(funcCall.FunctionName))
 		}
 		e.Code = append(e.Code, expr.Code...)
 		e.Temps = append(e.Temps, expr.Temps...)
@@ -322,7 +322,7 @@ func (e *Expression) FunctionCall(funcCall *parser.FuncCall) (string, error) {
 
 	funcTemp := e.manager.NewTempVariable("unknown")
 	code := fmt.Sprintf("%s := %s.%s(%s)",
-		funcTemp, funcCall.PackageId, funcCall.FunctionName, strings.Join(argsTemp, ", "))
+		funcTemp, StringValue(funcCall.PackageId), StringValue(funcCall.FunctionName), strings.Join(argsTemp, ", "))
 
 	e.Code = append(e.Code, code)
 	e.Temps = append(e.Temps, funcTemp)
