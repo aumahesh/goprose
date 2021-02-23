@@ -22,10 +22,13 @@ func (g *translator) do() error {
 	g.intermediateProgram.Org = defaultOrg
 	g.intermediateProgram.ModuleName = StringValue(g.parsedProgram.Name)
 	g.intermediateProgram.PackageName = "internal"
+	g.intermediateProgram.InterfaceName = fmt.Sprintf("%s_intf", StringValue(g.parsedProgram.Name))
+	g.intermediateProgram.ImplementationName = fmt.Sprintf("%s_impl", StringValue(g.parsedProgram.Name))
 
 	translatorFuncs := []func() error{
 		g.doConstantDeclarations,
 		g.doVariableDeclarations,
+		g.doGuardedStatements,
 	}
 
 	for _, translatorFunc := range translatorFuncs {
@@ -92,5 +95,20 @@ func (g *translator) doVariableDeclarations() error {
 		}
 	}
 
+	return nil
+}
+
+func (g *translator) doGuardedStatements() error {
+	g.intermediateProgram.Statements = map[string]*GuardedStatement{}
+
+	for index, stmt := range g.parsedProgram.Statements {
+		log.Debugf("Processing statement: %d, %+v", index, stmt)
+		statementFunc := fmt.Sprintf("doAction%d", index)
+		s, err := NewStatement()
+		if err != nil {
+			return err
+		}
+		g.intermediateProgram.Statements[statementFunc] = s
+	}
 	return nil
 }

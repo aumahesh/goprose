@@ -59,9 +59,9 @@ func (t *TemplateManager) getFileName(fileType ftype) string {
 	case stateProtoFile:
 		return fmt.Sprintf("%s/proto/state.proto", t.modulePath)
 	case interfaceFile:
-		return fmt.Sprintf("%s/%s/%s_intf.go", t.modulePath, t.intermediate.PackageName, t.intermediate.InterfaceName)
+		return fmt.Sprintf("%s/%s/%s.go", t.modulePath, t.intermediate.PackageName, t.intermediate.InterfaceName)
 	case implementationFile:
-		return fmt.Sprintf("%s/%s/%s_impl.go", t.modulePath, t.intermediate.PackageName, t.intermediate.ImplementationName)
+		return fmt.Sprintf("%s/%s/%s.go", t.modulePath, t.intermediate.PackageName, t.intermediate.ImplementationName)
 	case mainFile:
 		return fmt.Sprintf("%s/cmd/main.go", t.modulePath)
 	case makeFile:

@@ -14,6 +14,7 @@ type Program struct {
 	ImplementationName string
 	Constants          map[string]*Variable
 	Variables          map[string]*Variable
+	Statements         map[string]*GuardedStatement
 }
 
 func (pv *Program) GetType(key string) (string, error) {

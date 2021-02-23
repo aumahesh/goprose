@@ -149,8 +149,28 @@ func (this *{{.ImplementationName}}) isNeighborUp(id string) bool {
 	return nbr.active
 }
 
+{{ range $Name, $Stmt := .Statements }}
+func (this *{{$.ImplementationName}}) {{$Name}}() bool {
+	stateChanged := false
+
+	return stateChanged
+}
+{{end }}
+
 func (this *{{.ImplementationName}}) updateLocalState() bool {
 	stateChanged := false
+
+	statements := []func() bool{
+{{ range $Name, $Stmt := .Statements }}
+		this.{{$Name}},
+{{ end }}
+	}
+
+	for _, stmtFunc := range statements {
+		if changed := stmtFunc(); changed {
+			stateChanged = true
+		}
+	}
 
 	return stateChanged
 }
