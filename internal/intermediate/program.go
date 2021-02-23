@@ -12,6 +12,7 @@ type Program struct {
 	PackageName        string
 	InterfaceName      string
 	ImplementationName string
+	Constants          map[string]*Variable
 	Variables          map[string]*Variable
 }
 
@@ -25,6 +26,22 @@ func (pv *Program) GetType(key string) (string, error) {
 
 func (pv *Program) IsType(key string, tgt string) bool {
 	t, err := pv.GetType(key)
+	if err != nil {
+		return false
+	}
+	return t == tgt
+}
+
+func (pv *Program) GetConstantType(key string) (string, error) {
+	v, ok := pv.Constants[key]
+	if !ok {
+		return "", fmt.Errorf("%s not found", key)
+	}
+	return GetProseTypeString(v.ProseType), nil
+}
+
+func (pv *Program) IsConstantType(key string, tgt string) bool {
+	t, err := pv.GetConstantType(key)
 	if err != nil {
 		return false
 	}

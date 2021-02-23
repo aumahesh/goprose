@@ -13,9 +13,11 @@ import (
 func main() {
 	log.SetLevel(log.DebugLevel)
 
-	var proseFile = flag.String("-p", "proseFiles/max.prose", "source prose file")
-	var targetFolder = flag.String("-o", "_generatedModules/", "target folder")
+	var proseFile = flag.String("p", "proseFiles/max.prose", "source prose file")
+	var targetFolder = flag.String("o", "_generatedModules/", "target folder")
 	log.Infof("GoProSe: compiling %s", *proseFile)
+
+	flag.Parse()
 
 	parser, err := parser.NewProSeParser(*proseFile, false)
 	if err != nil {

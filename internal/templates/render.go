@@ -86,6 +86,16 @@ func (t *TemplateManager) Render() error {
 		"isString": func(key string) bool {
 			return t.intermediate.IsType(key, "string")
 		},
+		"getConstantType": func(key string) string {
+			t, err := t.intermediate.GetType(key)
+			if err != nil {
+				return "int"
+			}
+			return t
+		},
+		"isConstantString": func(key string) bool {
+			return t.intermediate.IsConstantType(key, "string")
+		},
 		"increment": func(c int) int {
 			return c + 1
 		},

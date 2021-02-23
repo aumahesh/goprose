@@ -17,6 +17,16 @@ const (
 	maxDatagramSize = 1024
 )
 
+const (
+	{{ range $Name, $Const := .Constants -}}
+		{{ if (isConstantString $Name) -}}
+	{{$Name}} {{getConstantType $Name}} = "{{$Const.DefaultValue}}"
+		{{ else -}}
+	{{$Name}} {{getConstantType $Name}} = {{$Const.DefaultValue}}
+		{{ end -}}
+	{{- end }}
+)
+
 type NeighborState struct {
 	id string
 	state *p.State
