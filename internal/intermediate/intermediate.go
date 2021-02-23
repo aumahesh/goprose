@@ -25,6 +25,7 @@ func (g *translator) do() error {
 	g.intermediateProgram.PackageName = "internal"
 	g.intermediateProgram.InterfaceName = fmt.Sprintf("%s_intf", StringValue(g.parsedProgram.Name))
 	g.intermediateProgram.ImplementationName = fmt.Sprintf("%s_impl", StringValue(g.parsedProgram.Name))
+	g.intermediateProgram.SensorName = StringValue(g.parsedProgram.Sensor)
 
 	g.intermediateProgram.Constants = map[string]*Variable{}
 	g.intermediateProgram.Variables = map[string]*Variable{}
@@ -64,8 +65,6 @@ func (g *translator) doImportDeclarations() error {
 func (g *translator) doConstantDeclarations() error {
 	log.Debugf("Processing constants...")
 
-	sensorName := StringValue(g.parsedProgram.Sensor)
-
 	for _, constDefinitions := range g.parsedProgram.ConstDeclarations {
 		if len(constDefinitions.Ids) != len(constDefinitions.Values) && len(constDefinitions.Values) != 0 {
 			return fmt.Errorf("Error: constant declaration at %s invalid: default value assignment has %d on LHS, and %d on RHS",
@@ -89,17 +88,10 @@ func (g *translator) doConstantDeclarations() error {
 			g.intermediateProgram.Constants[idStr] = v
 			log.Debugf("Constant %s: %+v", idStr, v)
 
-			var defaultValue *parser.Expr
 			if constDefinitions.Values != nil {
-				defaultValue = constDefinitions.Values[index]
-				initExpr, err := NewExpression(defaultValue,
-					sensorName,
-					g.intermediateProgram.Constants,
-					g.intermediateProgram.Variables,
-					g.tempsManager)
+				initExpr, err := g.doInitFunction(idStr, constDefinitions.Values[index])
 				if err != nil {
-					return fmt.Errorf("Error: error in constructing init function for %s @ %s: %s",
-						id.Id, defaultValue.Pos, err)
+					return err
 				}
 				g.intermediateProgram.ConstantInitFunctions[idStr] = initExpr
 			}
@@ -112,7 +104,7 @@ func (g *translator) doConstantDeclarations() error {
 func (g *translator) doVariableDeclarations() error {
 	log.Debugf("Processing variables...")
 
-	sensorName := StringValue(g.parsedProgram.Sensor)
+	sensorName := g.intermediateProgram.SensorName
 
 	for _, varDefinitions := range g.parsedProgram.VariableDeclarations {
 		if len(varDefinitions.Ids) != len(varDefinitions.Values) && len(varDefinitions.Values) != 0 {
@@ -142,17 +134,10 @@ func (g *translator) doVariableDeclarations() error {
 			g.intermediateProgram.Variables[idStr] = v
 			log.Debugf("Variable %s: %+v", idStr, v)
 
-			var defaultValue *parser.Expr
 			if varDefinitions.Values != nil {
-				defaultValue = varDefinitions.Values[index]
-				initExpr, err := NewExpression(defaultValue,
-					sensorName,
-					g.intermediateProgram.Constants,
-					g.intermediateProgram.Variables,
-					g.tempsManager)
+				initExpr, err := g.doInitFunction(idStr, varDefinitions.Values[index])
 				if err != nil {
-					return fmt.Errorf("Error: error in constructing init function for %s @ %s: %s",
-						id.Id, defaultValue.Pos, err)
+					return err
 				}
 				g.intermediateProgram.VariableInitFunctions[idStr] = initExpr
 			}
@@ -163,10 +148,23 @@ func (g *translator) doVariableDeclarations() error {
 	return nil
 }
 
+func (g *translator) doInitFunction(id string, defaultValue *parser.Expr) (*Expression, error) {
+	initExpr, err := NewExpression(defaultValue,
+		g.intermediateProgram.SensorName,
+		g.intermediateProgram.Constants,
+		g.intermediateProgram.Variables,
+		g.tempsManager)
+	if err != nil {
+		return nil, fmt.Errorf("Error: error in constructing init function for %s @ %s: %s",
+			id, defaultValue.Pos, err)
+	}
+	return initExpr, nil
+}
+
 func (g *translator) doGuardedStatements() error {
 	log.Debugf("Processing statements...")
 
-	sensorName := StringValue(g.parsedProgram.Sensor)
+	sensorName := g.intermediateProgram.SensorName
 
 	g.intermediateProgram.Statements = map[string]*GuardedStatement{}
 

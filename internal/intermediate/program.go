@@ -12,6 +12,7 @@ type Program struct {
 	PackageName           string
 	InterfaceName         string
 	ImplementationName    string
+	SensorName            string
 	Imports               map[string]*Import
 	Constants             map[string]*Variable
 	Variables             map[string]*Variable
