@@ -217,7 +217,7 @@ func (this *{{.ImplementationName}}) send(msg *p.BroadcastMessage) (int, error) 
 	return this.mcastConn.Write(data)
 }
 
-func (this *color) msgHandler(src *net.UDPAddr, n int, b []byte) {
+func (this *{{.ImplementationName}}) msgHandler(src *net.UDPAddr, n int, b []byte) {
 	log.Debugf("received message (%d bytes) from %s", n, src.String())
 	broadcastMessage := &p.BroadcastMessage{}
 	err := proto.Unmarshal(b[:n], broadcastMessage)
