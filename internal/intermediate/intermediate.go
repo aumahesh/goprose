@@ -1,6 +1,10 @@
 package intermediate
 
 import (
+	"fmt"
+
+	log "github.com/sirupsen/logrus"
+
 	"github.com/aumahesh/goprose/internal/parser"
 )
 
@@ -17,5 +21,36 @@ type translator struct {
 
 func (g *translator) do() error {
 	g.intermediateProgram.Org = defaultOrg
+	g.intermediateProgram.ModuleName = StringValue(g.parsedProgram.Name)
+	g.intermediateProgram.PackageName = "internal"
+
+	g.intermediateProgram.Variables = map[string]*Variable{}
+
+	sensorName := StringValue(g.parsedProgram.Sensor)
+
+	for _, varDefinitions := range g.parsedProgram.VariableDeclarations {
+		for _, id := range varDefinitions.Ids {
+			idStr := StringValue(id.Id)
+			_, declared := g.intermediateProgram.Variables[idStr]
+			if declared {
+				return fmt.Errorf("Error: %s variable is already declared", idStr)
+			}
+			if id.Source != nil {
+				if id.Source.VariableId != nil {
+					return fmt.Errorf("Error: cannot define a variable that points to another sensor/process: %s", idStr)
+				}
+				if id.Source.Source != nil && StringValue(id.Source.Source) != sensorName {
+					return fmt.Errorf("Error: cannot define a variable that points to another sensor/process: %s", idStr)
+				}
+			}
+			v, err := NewVariable(idStr, StringValue(varDefinitions.Access), StringValue(varDefinitions.VariableType), nil)
+			if err != nil {
+				return err
+			}
+			g.intermediateProgram.Variables[idStr] = v
+			log.Debugf("Variable %s: %+v", idStr, v)
+		}
+	}
+
 	return nil
 }

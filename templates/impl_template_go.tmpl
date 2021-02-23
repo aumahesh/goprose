@@ -53,12 +53,12 @@ func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 
 	this.neighborState = map[string]*NeighborState{}
 
-	{{ range $Name, $Value := .InitialState -}}
-	{{ if (isString $Name) -}}
-	this.state.{{protoName $Name}} = "{{$Value}}"
-	{{ else -}}
-	this.state.{{protoName $Name}} = {{$Value}}
-	{{ end -}}
+	{{ range $Name, $Var := .Variables -}}
+        {{ if (isString $Name) -}}
+			this.state.{{protoName $Name}} = "{{$Var.DefaultValue}}"
+        {{ else -}}
+			this.state.{{protoName $Name}} = {{$Var.DefaultValue}}
+        {{ end -}}
 	{{- end }}
 	return nil
 }

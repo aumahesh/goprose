@@ -11,14 +11,15 @@ import (
 )
 
 type ProSeParser struct {
-	programFile string
-	program     *Program
-	parsed      bool
-	error       error
-	lex         *stateful.Definition
+	programFile    string
+	program        *Program
+	parsed         bool
+	error          error
+	printParseTree bool
+	lex            *stateful.Definition
 }
 
-func NewProSeParser(programFile string) (*ProSeParser, error) {
+func NewProSeParser(programFile string, printParseTree bool) (*ProSeParser, error) {
 	lex := stateful.MustSimple([]stateful.Rule{
 		{"comment", `(?:#|//)[^\n]*\n?`, nil},
 		{"whitespace", `[ \t\n\r]+`, nil},
@@ -29,11 +30,12 @@ func NewProSeParser(programFile string) (*ProSeParser, error) {
 	})
 
 	return &ProSeParser{
-		programFile: programFile,
-		program:     &Program{},
-		lex:         lex,
-		parsed:      false,
-		error:       nil,
+		programFile:    programFile,
+		program:        &Program{},
+		lex:            lex,
+		parsed:         false,
+		error:          nil,
+		printParseTree: printParseTree,
 	}, nil
 }
 
@@ -51,7 +53,9 @@ func (p *ProSeParser) Parse() error {
 	err = parser.Parse(p.programFile, r, p.program, participle.AllowTrailing(true))
 
 	if err == nil {
-		repr.Println(p.program, repr.Hide(&lexer.Position{}))
+		if p.printParseTree {
+			repr.Println(p.program, repr.Hide(&lexer.Position{}))
+		}
 		p.parsed = true
 	} else {
 		perr := err.(participle.Error)

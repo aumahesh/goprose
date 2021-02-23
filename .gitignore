@@ -3,3 +3,5 @@ internal/templates/tmp/*
 bin/*
 generatedModules/*
 generatedPackages/*
+_generatedModules/*
+_generatedPackages/*

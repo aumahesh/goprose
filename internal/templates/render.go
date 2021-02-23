@@ -25,23 +25,25 @@ const (
 
 var (
 	templateFiles = map[ftype]string{
-		goModFile:          "resources/go_mod_template.tmpl",
-		stateProtoFile:     "resources/state_proto.tmpl",
-		implementationFile: "resources/impl_template_go.tmpl",
-		interfaceFile:      "resources/interface_template_go.tmpl",
-		mainFile:           "resources/main_template_go.tmpl",
-		makeFile:           "resources/makefile.tmpl",
+		goModFile:          "go_mod_template.tmpl",
+		stateProtoFile:     "state_proto.tmpl",
+		implementationFile: "impl_template_go.tmpl",
+		interfaceFile:      "interface_template_go.tmpl",
+		mainFile:           "main_template_go.tmpl",
+		makeFile:           "makefile.tmpl",
 	}
 )
 
 type TemplateManager struct {
+	templatePath string
 	outputPath   string
 	modulePath   string
 	intermediate *intermediate.Program
 }
 
-func NewTemplateManager(outputPath string, program *intermediate.Program) (*TemplateManager, error) {
+func NewTemplateManager(templatePath string, outputPath string, program *intermediate.Program) (*TemplateManager, error) {
 	t := &TemplateManager{
+		templatePath: templatePath,
 		outputPath:   outputPath,
 		modulePath:   fmt.Sprintf("%s/%s", outputPath, program.ModuleName),
 		intermediate: program,
@@ -74,6 +76,13 @@ func (t *TemplateManager) Render() error {
 	os.MkdirAll(fmt.Sprintf("%s/cmd", t.modulePath), 0777)
 
 	tplFuncs := template.FuncMap{
+		"getType": func(key string) string {
+			t, err := t.intermediate.GetType(key)
+			if err != nil {
+				return "int"
+			}
+			return t
+		},
 		"isString": func(key string) bool {
 			return t.intermediate.IsType(key, "string")
 		},
@@ -84,7 +93,8 @@ func (t *TemplateManager) Render() error {
 	}
 
 	for fileType, tf := range templateFiles {
-		tpl, err := template.New(path.Base(tf)).Funcs(tplFuncs).ParseFiles(tf)
+		templateFilePath := path.Join(t.templatePath, tf)
+		tpl, err := template.New(tf).Funcs(tplFuncs).ParseFiles(templateFilePath)
 		if err != nil {
 			return err
 		}

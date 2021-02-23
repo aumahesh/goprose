@@ -14,10 +14,10 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 
 	var proseFile = flag.String("-p", "proseFiles/max.prose", "source prose file")
-	var targetFolder = flag.String("-o", "generatedModules/", "target folder")
+	var targetFolder = flag.String("-o", "_generatedModules/", "target folder")
 	log.Infof("GoProSe: compiling %s", *proseFile)
 
-	parser, err := parser.NewProSeParser(*proseFile)
+	parser, err := parser.NewProSeParser(*proseFile, false)
 	if err != nil {
 		panic(err)
 	}
@@ -38,7 +38,7 @@ func main() {
 	}
 
 	log.Infof("GoProse: generating code at %s", *targetFolder)
-	codeGenerator, err := templates.NewTemplateManager(*targetFolder, intermediateProgram)
+	codeGenerator, err := templates.NewTemplateManager("templates/", *targetFolder, intermediateProgram)
 	if err != nil {
 		panic(err)
 	}

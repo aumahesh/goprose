@@ -12,8 +12,7 @@ type Program struct {
 	PackageName        string
 	InterfaceName      string
 	ImplementationName string
-	Variables          map[string]string
-	InitialState       map[string]interface{}
+	Variables          map[string]*Variable
 }
 
 func (pv *Program) GetType(key string) (string, error) {
@@ -21,7 +20,7 @@ func (pv *Program) GetType(key string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("%s not found", key)
 	}
-	return v, nil
+	return GetProseTypeString(v.ProseType), nil
 }
 
 func (pv *Program) IsType(key string, tgt string) bool {

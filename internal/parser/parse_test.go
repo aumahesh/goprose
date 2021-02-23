@@ -23,7 +23,7 @@ func TestProSeParser_Parse(t *testing.T) {
 
 	for _, pf := range proseFiles {
 		proseFile := fmt.Sprintf("../../proseFiles/%s", pf)
-		p, err := NewProSeParser(proseFile)
+		p, err := NewProSeParser(proseFile, true)
 		assert.Nil(t, err)
 		if err != nil {
 			t.FailNow()

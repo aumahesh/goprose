@@ -18,19 +18,9 @@ func TestTemplateManager_Render(t *testing.T) {
 		PackageName:        "internal",
 		InterfaceName:      "Color",
 		ImplementationName: "color",
-		Variables: map[string]string{
-			"parent":   "string",
-			"root":     "string",
-			"is_green": "bool",
-		},
-		InitialState: map[string]interface{}{
-			"parent":   "abcdef",
-			"root":     "00000",
-			"is_green": true,
-		},
 	}
 
-	tpl, err := NewTemplateManager("../../generatedPackages/", pv)
+	tpl, err := NewTemplateManager("../../templates", "../../_generatedModules/", pv)
 	assert.Nil(t, err)
 	assert.NotNil(t, tpl)
 

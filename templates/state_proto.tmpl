@@ -6,9 +6,9 @@ option go_package = ".;models";
 
 message State {
 	{{$count := 0 -}}
-	{{ range $Name, $Type := .Variables -}}
+	{{ range $Name, $Var := .Variables -}}
 	{{ $count = (increment $count) -}}
-        {{$Type}} {{$Name}} = {{$count}};
+        {{getType $Name}} {{$Name}} = {{$count}};
 	{{ end }}
 }
 
