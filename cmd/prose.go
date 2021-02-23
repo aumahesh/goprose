@@ -22,32 +22,32 @@ func main() {
 
 	parser, err := parser.NewProSeParser(*proseFile, false)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	err = parser.Parse()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	log.Infof("GoProse: generating intemediate program")
 	parsedProgram, err := parser.GetParsedProgram()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	intermediateProgram, err := intermediate.GenerateIntermediateProgram(parsedProgram)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	log.Infof("GoProse: generating code at %s", *targetFolder)
 	codeGenerator, err := templates.NewTemplateManager("templates/", *targetFolder, intermediateProgram)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	err = codeGenerator.Render()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

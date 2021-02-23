@@ -43,6 +43,8 @@ func (g *translator) do() error {
 }
 
 func (g *translator) doConstantDeclarations() error {
+	log.Debugf("Processing constants...")
+
 	g.intermediateProgram.Constants = map[string]*Variable{}
 
 	for _, constDefinitions := range g.parsedProgram.ConstDeclarations {
@@ -50,10 +52,12 @@ func (g *translator) doConstantDeclarations() error {
 			idStr := StringValue(id.Id)
 			_, declared := g.intermediateProgram.Constants[idStr]
 			if declared {
-				return fmt.Errorf("Error: %s variable is already declared", idStr)
+				return fmt.Errorf("Error: %s variable is already declared: redeclaration @ %s",
+					idStr, id.Pos)
 			}
 			if id.Source != nil {
-				return fmt.Errorf("Error: constant cannot point to another sensor/process: %s", idStr)
+				return fmt.Errorf("Error: constant cannot point to another sensor/process: %s @ %s",
+					idStr, id.Source.Pos)
 			}
 			v, err := NewVariable(idStr, "", StringValue(constDefinitions.VariableType), nil)
 			if err != nil {
@@ -68,6 +72,8 @@ func (g *translator) doConstantDeclarations() error {
 }
 
 func (g *translator) doVariableDeclarations() error {
+	log.Debugf("Processing variables...")
+
 	sensorName := StringValue(g.parsedProgram.Sensor)
 
 	g.intermediateProgram.Variables = map[string]*Variable{}
@@ -81,15 +87,17 @@ func (g *translator) doVariableDeclarations() error {
 			}
 			if id.Source != nil {
 				if id.Source.VariableId != nil {
-					return fmt.Errorf("Error: cannot define a variable that points to another sensor/process: %s", idStr)
+					return fmt.Errorf("Error: cannot define a variable that points to another sensor/process: %s @ %s",
+						idStr, id.Source.Pos)
 				}
 				if id.Source.Source != nil && StringValue(id.Source.Source) != sensorName {
-					return fmt.Errorf("Error: cannot define a variable that points to another sensor/process: %s", idStr)
+					return fmt.Errorf("Error: cannot define a variable that points to another sensor/process: %s @ %s",
+						idStr, id.Source.Pos)
 				}
 			}
 			v, err := NewVariable(idStr, StringValue(varDefinitions.Access), StringValue(varDefinitions.VariableType), nil)
 			if err != nil {
-				return err
+				return fmt.Errorf("Error: processing variable declaraiton failed: %s", id.Pos)
 			}
 			g.intermediateProgram.Variables[idStr] = v
 			log.Debugf("Variable %s: %+v", idStr, v)
@@ -100,16 +108,17 @@ func (g *translator) doVariableDeclarations() error {
 }
 
 func (g *translator) doGuardedStatements() error {
+	log.Debugf("Processing statements...")
+
 	sensorName := StringValue(g.parsedProgram.Sensor)
 
 	g.intermediateProgram.Statements = map[string]*GuardedStatement{}
 
 	for index, stmt := range g.parsedProgram.Statements {
-		log.Debugf("Processing statement: %d, %+v", index, stmt)
 		statementFunc := fmt.Sprintf("doAction%d", index)
 		s, err := NewStatement(stmt, sensorName, g.intermediateProgram.Constants, g.intermediateProgram.Variables, g.tempsManager)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error: statement %s errored: %s", stmt.Pos, err)
 		}
 		g.intermediateProgram.Statements[statementFunc] = s
 
