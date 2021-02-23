@@ -7,14 +7,17 @@ import (
 )
 
 type Program struct {
-	Org                string
-	ModuleName         string
-	PackageName        string
-	InterfaceName      string
-	ImplementationName string
-	Constants          map[string]*Variable
-	Variables          map[string]*Variable
-	Statements         map[string]*GuardedStatement
+	Org                   string
+	ModuleName            string
+	PackageName           string
+	InterfaceName         string
+	ImplementationName    string
+	Imports               map[string]*Import
+	Constants             map[string]*Variable
+	Variables             map[string]*Variable
+	ConstantInitFunctions map[string]*Expression
+	VariableInitFunctions map[string]*Expression
+	Statements            map[string]*GuardedStatement
 }
 
 func (pv *Program) GetType(key string) (string, error) {

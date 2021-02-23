@@ -17,7 +17,7 @@ const (
 	maxDatagramSize = 1024
 )
 
-const (
+var (
 	{{ range $Name, $Const := .Constants -}}
 		{{ if (isConstantString $Name) -}}
 	{{$Name}} {{getConstantType $Name}} = "{{$Const.DefaultValue}}"
@@ -63,6 +63,16 @@ func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 
 	this.neighborState = map[string]*NeighborState{}
 
+	{{ range $Name, $Expr := .ConstantInitFunctions -}}
+		{{$Name}} = this.initConstant{{$Name}}()
+	{{ end }}
+
+	this.initState()
+
+	return nil
+}
+
+func (this *{{.ImplementationName}}) initState() {
 	{{ range $Name, $Var := .Variables -}}
         {{ if (isString $Name) -}}
 			this.state.{{protoName $Name}} = "{{$Var.DefaultValue}}"
@@ -70,8 +80,31 @@ func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 			this.state.{{protoName $Name}} = {{$Var.DefaultValue}}
         {{ end -}}
 	{{- end }}
-	return nil
+
+	{{ range $Name, $Expr := .VariableInitFunctions -}}
+		this.state.{{protoName $Name}} = this.initVarible{{protoName $Name}}()
+	{{ end }}
 }
+
+{{ range $Name, $Expr := .ConstantInitFunctions -}}
+func (this *{{$.ImplementationName}}) initConstant{{$Name}}() {{getConstantType $Name}} {
+	{{ range .Code }}
+	{{.}}
+	{{ end }}
+	return {{$Expr.FinalResult}}
+}
+
+{{ end -}}
+
+{{ range $Name, $Expr := .VariableInitFunctions -}}
+	func (this *{{$.ImplementationName}}) initVarible{{protoName $Name}}() {{getType $Name}} {
+    {{ range .Code }}
+        {{.}}
+    {{ end }}
+	return {{$Expr.FinalResult}}
+}
+
+{{ end -}}
 
 func (this *{{.ImplementationName}}) EventHandler(ctx context.Context) {
 	heartbeatTicker := time.NewTicker(heartbeatInterval)

@@ -12,7 +12,7 @@ type Variable struct {
 	DefaultValue interface{}
 }
 
-func NewVariable(name, atype, ptype string, initial *string) (*Variable, error) {
+func NewVariable(name, atype, ptype string) (*Variable, error) {
 	v := &Variable{Name: name}
 
 	v.AccessType = GetAccessType(atype)
@@ -26,13 +26,6 @@ func NewVariable(name, atype, ptype string, initial *string) (*Variable, error) 
 	}
 
 	v.SetDefaultValue()
-	if initial != nil {
-		initialValue := StringValue(initial)
-		err := v.SetValue(initialValue)
-		if err != nil {
-			return nil, fmt.Errorf("Error setting initial value for variable: %s %s %s", name, initialValue, err)
-		}
-	}
 
 	return v, nil
 }

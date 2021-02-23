@@ -2,6 +2,7 @@ program test
 
 import "github.com/aumahesh/coverage"
 import "github.com/aumahesh/detect"
+import "neighborhood"
 
 sensor j
 
