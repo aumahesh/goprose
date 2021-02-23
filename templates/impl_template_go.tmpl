@@ -1,3 +1,5 @@
+// +build {{.ModuleName}}
+
 package {{.PackageName}}
 
 import (
@@ -99,7 +101,7 @@ func (this *{{$.ImplementationName}}) initConstant{{$Name}}() {{getConstantType 
 {{ range $Name, $Expr := .VariableInitFunctions -}}
 	func (this *{{$.ImplementationName}}) initVarible{{protoName $Name}}() {{getType $Name}} {
     {{ range .Code }}
-        {{.}}
+	{{.}}
     {{ end }}
 	return {{$Expr.FinalResult}}
 }

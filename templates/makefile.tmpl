@@ -13,7 +13,7 @@ proto-clean:
 	rm -rf models/
 
 build:
-	mkdir -p bin/ && go build  -o bin/{{.ModuleName}} {{.Org}}/{{.ModuleName}}/cmd
+	mkdir -p bin/ && go build  --tags={{.ModuleName}} -o bin/{{.ModuleName}} {{.Org}}/{{.ModuleName}}/cmd
 
 all: fmt protos build
 
