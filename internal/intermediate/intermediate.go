@@ -26,6 +26,21 @@ func (g *translator) do() error {
 
 	g.intermediateProgram.Variables = map[string]*Variable{}
 
+	translatorFuncs := []func() error{
+		g.doVariableDeclarations,
+	}
+
+	for _, translatorFunc := range translatorFuncs {
+		err := translatorFunc()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (g *translator) doVariableDeclarations() error {
 	sensorName := StringValue(g.parsedProgram.Sensor)
 
 	for _, varDefinitions := range g.parsedProgram.VariableDeclarations {
