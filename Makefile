@@ -21,4 +21,5 @@ clean:
 	echo "cleaning..."
 	rm -rf bin/
 	rm -rf _generatedModules
+	rm -rf _generatedPackages
 	rm -rf _examples

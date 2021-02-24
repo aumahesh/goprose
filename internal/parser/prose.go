@@ -143,7 +143,7 @@ type Comparison struct {
 	Pos lexer.Position
 
 	Addition *Addition   `@@`
-	Op       string      `[ @( ">" "=" | ">" | "<" "=" | "<" )`
+	Op       string      `[ @( ">" "=" | ">" | "<" "=" | "<" | "=" ">" )`
 	Next     *Comparison `  @@ ]`
 }
 

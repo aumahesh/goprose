@@ -18,4 +18,8 @@ begin
 
 (st.j == 1) && (timer.j >= a) -> st.j = 2; timer.j = 0;
 
+|
+
+(tmp.j => (x.j == 50)) -> msg.j = "Implied";
+
 end

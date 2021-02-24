@@ -347,7 +347,15 @@ func (e *Expression) Comparison(comparison *parser.Comparison) (string, error) {
 		return "", err
 	}
 
-	return e.generateBinaryOperationCode(t1, comparison.Op, t2), nil
+	if comparison.Op == "=>" {
+		negateT1 := e.manager.NewTempVariable(GetProseTypeString(ProseTypeBool))
+		code := fmt.Sprintf("%s := !%s", negateT1, t1)
+		e.Code = append(e.Code, code)
+		e.Temps = append(e.Temps, negateT1)
+		return e.generateBinaryOperationCode(negateT1, "||", t2), nil
+	} else {
+		return e.generateBinaryOperationCode(t1, comparison.Op, t2), nil
+	}
 }
 
 func (e *Expression) Addition(addition *parser.Addition) (string, error) {
@@ -420,7 +428,7 @@ func (e *Expression) Primary(primary *parser.Primary) (string, error) {
 		return fmt.Sprintf("int64(%d)", Int64Value(primary.NumberValue)), nil
 	}
 	if primary.StringValue != nil {
-		return fmt.Sprintf(`"%s"`, StringValue(primary.BoolValue)), nil
+		return fmt.Sprintf(`"%s"`, StringValue(primary.StringValue)), nil
 	}
 	if primary.BoolValue != nil {
 		return StringValue(primary.BoolValue), nil
