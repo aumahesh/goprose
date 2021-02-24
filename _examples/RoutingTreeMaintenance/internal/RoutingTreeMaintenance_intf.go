@@ -19,3 +19,4 @@ func NewRoutingTreeMaintenance_intf(id string, mcast string) (RoutingTreeMainten
 	}
 	return x, nil
 }
+
