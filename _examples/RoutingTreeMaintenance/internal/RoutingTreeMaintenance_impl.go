@@ -28,9 +28,6 @@ var (
 	
 	CMAX int64 = 0
 	
-	
-	NULL int64 = 0
-	
 )
 
 type NeighborState struct {
@@ -80,7 +77,6 @@ func (this *RoutingTreeMaintenance_impl) init(id string, mcastAddr string) error
 	}
 
 	CMAX = this.initConstantCMAX()
-	NULL = this.initConstantNULL()
 	
 
 	this.initState()
@@ -106,27 +102,20 @@ func (this *RoutingTreeMaintenance_impl) initConstantCMAX() int64 {
 	return temp0
 }
 
-func (this *RoutingTreeMaintenance_impl) initConstantNULL() int64 {
-	
-	temp1 := int64(0)
-	
-	return temp1
-}
-
 func (this *RoutingTreeMaintenance_impl) initVaribleDist() int64 {
     
-	temp3 := int64(10)
+	temp2 := int64(10)
     
-	temp4 := rand.Int63n(temp3)
+	temp3 := rand.Int63n(temp2)
     
-	return temp4
+	return temp3
 }
 
 func (this *RoutingTreeMaintenance_impl) initVaribleInv() int64 {
     
-	temp2 := int64(0)
+	temp1 := int64(0)
     
-	return temp2
+	return temp1
 }
 
 func (this *RoutingTreeMaintenance_impl) EventHandler(ctx context.Context) {
@@ -234,30 +223,30 @@ func (this *RoutingTreeMaintenance_impl) doAction0() bool {
 	var found bool
 	var neighbor *NeighborState
 	for _, neighbor = range this.neighborState {
-		temp5 := neighbor.state.Dist
-		temp6 := this.state.Dist
-		temp7 := temp5 < temp6
-		temp8 := neighbor.id
-		temp9 := this.isNeighborUp(temp8)
-		temp10 := neighbor.state.Inv
-		temp11 := CMAX
-		temp12 := temp10 < temp11
-		temp13 := neighbor.state.Inv
-		temp14 := this.state.Inv
-		temp15 := temp13 < temp14
-		temp16 := temp12 && temp15
-		temp17 := temp9 && temp16
-		temp18 := temp7 && temp17
-		if temp18 {
+		temp4 := neighbor.state.Dist
+		temp5 := this.state.Dist
+		temp6 := temp4 < temp5
+		temp7 := neighbor.id
+		temp8 := this.isNeighborUp(temp7)
+		temp9 := neighbor.state.Inv
+		temp10 := CMAX
+		temp11 := temp9 < temp10
+		temp12 := neighbor.state.Inv
+		temp13 := this.state.Inv
+		temp14 := temp12 < temp13
+		temp15 := temp11 && temp14
+		temp16 := temp8 && temp15
+		temp17 := temp6 && temp16
+		if temp17 {
 			found = true
 			break
 		}
 	}
 	if found {
-		temp19 := neighbor.id
-		this.state.P = temp19
-		temp20 := neighbor.state.Inv
-		this.state.Inv = temp20
+		temp18 := neighbor.id
+		this.state.P = temp18
+		temp19 := neighbor.state.Inv
+		this.state.Inv = temp19
 		stateChanged = true
 	}
 
@@ -275,36 +264,36 @@ func (this *RoutingTreeMaintenance_impl) doAction1() bool {
 	var found bool
 	var neighbor *NeighborState
 	for _, neighbor = range this.neighborState {
-		temp21 := neighbor.state.Dist
-		temp22 := this.state.Dist
-		temp23 := temp21 < temp22
-		temp24 := neighbor.id
-		temp25 := this.isNeighborUp(temp24)
-		temp26 := neighbor.state.Inv
-		temp27 := int64(1)
-		temp28 := temp26 + temp27
-		temp29 := CMAX
-		temp30 := temp28 < temp29
-		temp31 := neighbor.state.Inv
-		temp32 := int64(1)
-		temp33 := temp31 + temp32
-		temp34 := this.state.Inv
-		temp35 := temp33 < temp34
-		temp36 := temp30 && temp35
-		temp37 := temp25 && temp36
-		temp38 := temp23 && temp37
-		if temp38 {
+		temp20 := neighbor.state.Dist
+		temp21 := this.state.Dist
+		temp22 := temp20 < temp21
+		temp23 := neighbor.id
+		temp24 := this.isNeighborUp(temp23)
+		temp25 := neighbor.state.Inv
+		temp26 := int64(1)
+		temp27 := temp25 + temp26
+		temp28 := CMAX
+		temp29 := temp27 < temp28
+		temp30 := neighbor.state.Inv
+		temp31 := int64(1)
+		temp32 := temp30 + temp31
+		temp33 := this.state.Inv
+		temp34 := temp32 < temp33
+		temp35 := temp29 && temp34
+		temp36 := temp24 && temp35
+		temp37 := temp22 && temp36
+		if temp37 {
 			found = true
 			break
 		}
 	}
 	if found {
-		temp39 := neighbor.id
-		this.state.P = temp39
-		temp40 := neighbor.state.Inv
-		temp41 := int64(1)
-		temp42 := temp40 + temp41
-		this.state.Inv = temp42
+		temp38 := neighbor.id
+		this.state.P = temp38
+		temp39 := neighbor.state.Inv
+		temp40 := int64(1)
+		temp41 := temp39 + temp40
+		this.state.Inv = temp41
 		stateChanged = true
 	}
 
@@ -322,71 +311,71 @@ func (this *RoutingTreeMaintenance_impl) doAction2() bool {
 	var found bool
 	var neighbor *NeighborState
 	for _, neighbor = range this.neighborState {
-		temp43 := this.state.P
-		temp44 := ""
-		temp45 := temp43 != temp44
-		temp46 := this.state.P
-		temp47 := this.isNeighborUp(temp46)
-		temp48 := false
-		temp49 := temp47 == temp48
-		var temp50 int64
+		temp42 := this.state.P
+		temp43 := ""
+		temp44 := temp42 != temp43
+		temp45 := this.state.P
+		temp46 := this.isNeighborUp(temp45)
+		temp47 := false
+		temp48 := temp46 == temp47
+		var temp49 int64
 		if neighbor.id == this.state.P {
-			temp50 = this.state.Inv
+			temp49 = this.state.Inv
 		} else {
 			continue
 		}
-		temp51 := CMAX
-		temp52 := temp50 >= temp51
-		var temp53 int64
+		temp50 := CMAX
+		temp51 := temp49 >= temp50
+		var temp52 int64
 		if neighbor.id == this.state.P {
-			temp53 = this.state.Dist
+			temp52 = this.state.Dist
 		} else {
 			continue
 		}
-		temp54 := this.state.Dist
-		temp55 := temp53 < temp54
-		temp56 := this.state.Inv
-		var temp57 int64
+		temp53 := this.state.Dist
+		temp54 := temp52 < temp53
+		temp55 := this.state.Inv
+		var temp56 int64
 		if neighbor.id == this.state.P {
-			temp57 = this.state.Inv
+			temp56 = this.state.Inv
 		} else {
 			continue
 		}
-		temp58 := temp56 != temp57
-		temp59 := temp55 && temp58
-		var temp60 int64
+		temp57 := temp55 != temp56
+		temp58 := temp54 && temp57
+		var temp59 int64
 		if neighbor.id == this.state.P {
-			temp60 = this.state.Dist
+			temp59 = this.state.Dist
 		} else {
 			continue
 		}
-		temp61 := this.state.Dist
-		temp62 := temp60 > temp61
-		temp63 := this.state.Inv
-		var temp64 int64
+		temp60 := this.state.Dist
+		temp61 := temp59 > temp60
+		temp62 := this.state.Inv
+		var temp63 int64
 		if neighbor.id == this.state.P {
-			temp64 = this.state.Inv
+			temp63 = this.state.Inv
 		} else {
 			continue
 		}
-		temp65 := int64(1)
-		temp66 := temp64 + temp65
-		temp67 := temp63 != temp66
-		temp68 := temp62 && temp67
-		temp69 := temp59 || temp68
-		temp70 := temp52 || temp69
-		temp71 := temp49 || temp70
-		temp72 := temp45 && temp71
-		if temp72 {
+		temp64 := int64(1)
+		temp65 := temp63 + temp64
+		temp66 := temp62 != temp65
+		temp67 := temp61 && temp66
+		temp68 := temp58 || temp67
+		temp69 := temp51 || temp68
+		temp70 := temp48 || temp69
+		temp71 := temp44 && temp70
+		if temp71 {
 			found = true
 			break
 		}
 	}
 	if found {
-		temp73 := ""
-		this.state.P = temp73
-		temp74 := CMAX
-		this.state.Inv = temp74
+		temp72 := ""
+		this.state.P = temp72
+		temp73 := CMAX
+		this.state.Inv = temp73
 		stateChanged = true
 	}
 
@@ -401,16 +390,16 @@ func (this *RoutingTreeMaintenance_impl) doAction3() bool {
 	log.Debugf("Executing: doAction3")
 
 	
-	temp75 := this.state.P
-	temp76 := ""
-	temp77 := temp75 == temp76
-	temp78 := this.state.Inv
-	temp79 := CMAX
-	temp80 := temp78 < temp79
-	temp81 := temp77 && temp80
-	if temp81 {
-		temp82 := CMAX
-		this.state.Inv = temp82
+	temp74 := this.state.P
+	temp75 := ""
+	temp76 := temp74 == temp75
+	temp77 := this.state.Inv
+	temp78 := CMAX
+	temp79 := temp77 < temp78
+	temp80 := temp76 && temp79
+	if temp80 {
+		temp81 := CMAX
+		this.state.Inv = temp81
 		stateChanged = true
 	}
 

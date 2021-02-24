@@ -45,7 +45,6 @@ import "math/rand"
 sensor j
 const
 	int CMAX = 100;
- 	int NULL = 0;
 var
 	public int inv.j, dist.j = 0, rand.Int63n(10);
 	private string p.j;
