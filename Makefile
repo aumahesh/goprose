@@ -21,3 +21,4 @@ clean:
 	echo "cleaning..."
 	rm -rf bin/
 	rm -rf _generatedModules
+	rm -rf _examples

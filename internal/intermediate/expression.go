@@ -255,23 +255,11 @@ func (e *Expression) GenerateCode() error {
 }
 
 func (e *Expression) generateBinaryOperationCode(t1, op, t2 string) string {
-	newTemp := e.manager.NewTempVariable("unknown")
-
-	code := fmt.Sprintf("%s := %s %s %s", newTemp, t1, op, t2)
-	e.Code = append(e.Code, code)
-	e.Temps = append(e.Temps, newTemp)
-
-	return newTemp
+	return fmt.Sprintf("(%s %s %s)", t1, op, t2)
 }
 
 func (e *Expression) generateUnaryOperationCode(t1, op string) string {
-	newTemp := e.manager.NewTempVariable("unknown")
-
-	code := fmt.Sprintf("%s := %s %s", newTemp, op, t1)
-	e.Code = append(e.Code, code)
-	e.Temps = append(e.Temps, newTemp)
-
-	return newTemp
+	return fmt.Sprintf("(%s %s)", op, t1)
 }
 
 func (e *Expression) Assignment(assignment *parser.Assignment) (string, error) {
@@ -429,25 +417,13 @@ func (e *Expression) Unary(unary *parser.Unary) (string, error) {
 
 func (e *Expression) Primary(primary *parser.Primary) (string, error) {
 	if primary.NumberValue != nil {
-		t1 := e.manager.NewTempVariable("int")
-		code := fmt.Sprintf("%s := int64(%d)", t1, Int64Value(primary.NumberValue))
-		e.Code = append(e.Code, code)
-		e.Temps = append(e.Temps, t1)
-		return t1, nil
+		return fmt.Sprintf("int64(%d)", Int64Value(primary.NumberValue)), nil
 	}
 	if primary.StringValue != nil {
-		t1 := e.manager.NewTempVariable("string")
-		code := fmt.Sprintf("%s := \"%s\"", t1, StringValue(primary.StringValue))
-		e.Code = append(e.Code, code)
-		e.Temps = append(e.Temps, t1)
-		return t1, nil
+		return fmt.Sprintf(`"%s"`, StringValue(primary.BoolValue)), nil
 	}
 	if primary.BoolValue != nil {
-		t1 := e.manager.NewTempVariable("bool")
-		code := fmt.Sprintf("%s := %s", t1, StringValue(primary.BoolValue))
-		e.Code = append(e.Code, code)
-		e.Temps = append(e.Temps, t1)
-		return t1, nil
+		return StringValue(primary.BoolValue), nil
 	}
 	if primary.ForAll != nil {
 		return e.ForAll(primary.ForAll)
@@ -574,30 +550,20 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 	}
 	vid := StringValue(variable.Id)
 	if variable.Source == nil {
+		var vtemp string
 		// constant
 		c, ok := e.constants[vid]
 		if !ok {
 			// vid is an id
 			if vid == e.sensorId {
-				vtemp := e.manager.NewTempVariable(GetProseTypeString(ProseTypeString))
-				code := fmt.Sprintf("%s := this.id", vtemp)
-				e.Code = append(e.Code, code)
-				e.Temps = append(e.Temps, vtemp)
-				return vtemp, nil
+				vtemp = "this.id"
 			} else {
-				vtemp := e.manager.NewTempVariable(GetProseTypeString(ProseTypeString))
-				code := fmt.Sprintf("%s := neighbor.id", vtemp)
-				e.Code = append(e.Code, code)
-				e.Temps = append(e.Temps, vtemp)
-				return vtemp, nil
+				vtemp = "neighbor.id"
 			}
 		} else {
-			vtemp := e.manager.NewTempVariable(GetProseTypeString(c.ProseType))
-			code := fmt.Sprintf("%s := %s", vtemp, c.Name)
-			e.Code = append(e.Code, code)
-			e.Temps = append(e.Temps, vtemp)
-			return vtemp, nil
+			vtemp = c.Name
 		}
+		return vtemp, nil
 	}
 	src := variable.Source
 	// constant
@@ -608,19 +574,13 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 	if src.Source != nil {
 		// source is from an id (not a variable)
 		vsrc := StringValue(src.Source)
+		var vtemp string
 		if vsrc == e.sensorId {
-			vtemp := e.manager.NewTempVariable(GetProseTypeString(v.ProseType))
-			code := fmt.Sprintf("%s := this.state.%s", vtemp, util.ToCamelCase(v.Name))
-			e.Code = append(e.Code, code)
-			e.Temps = append(e.Temps, vtemp)
-			return vtemp, nil
+			vtemp = fmt.Sprintf("this.state.%s", util.ToCamelCase(v.Name))
 		} else {
-			vtemp := e.manager.NewTempVariable(GetProseTypeString(v.ProseType))
-			code := fmt.Sprintf("%s := neighbor.state.%s", vtemp, util.ToCamelCase(v.Name))
-			e.Code = append(e.Code, code)
-			e.Temps = append(e.Temps, vtemp)
-			return vtemp, nil
+			vtemp = fmt.Sprintf("neighbor.state.%s", util.ToCamelCase(v.Name))
 		}
+		return vtemp, nil
 	}
 	if src.VariableId != nil {
 		vvid := StringValue(src.VariableId)
