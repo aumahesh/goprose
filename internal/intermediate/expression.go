@@ -604,7 +604,6 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 			return vtemp, nil
 		} else {
 			// TODO
-			return "", nil
 		}
 	}
 	return "", fmt.Errorf("invalid code sequence")
