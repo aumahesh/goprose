@@ -410,6 +410,7 @@ func (e *Expression) Unary(unary *parser.Unary) (string, error) {
 		}
 		switch unary.Op {
 		case "!":
+			fallthrough
 		case "-":
 			return e.generateUnaryOperationCode(t1, unary.Op), nil
 		default:
@@ -420,7 +421,7 @@ func (e *Expression) Unary(unary *parser.Unary) (string, error) {
 		return e.Primary(unary.Primary)
 	}
 
-	return "", fmt.Errorf("no rule to process")
+	return "", fmt.Errorf("unary: no rule to process: %+v", unary)
 }
 
 func (e *Expression) Primary(primary *parser.Primary) (string, error) {
@@ -453,7 +454,7 @@ func (e *Expression) Primary(primary *parser.Primary) (string, error) {
 		return newExpr.FinalResult, nil
 	}
 
-	return "", fmt.Errorf("no rule to process")
+	return "", fmt.Errorf("primary: no rule to process: %+v", primary)
 }
 
 func (e *Expression) ForAll(forall *parser.ForAllExpr) (string, error) {

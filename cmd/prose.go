@@ -10,17 +10,19 @@ import (
 	"github.com/aumahesh/goprose/internal/templates"
 )
 
-func main() {
-	log.SetLevel(log.DebugLevel)
+const (
+	defaultTemplatesFolder = "templates/"
+)
 
-	var proseFile = flag.String("p", "proseFiles/max.prose", "source prose file")
-	var targetFolder = flag.String("o", "_generatedModules/", "target folder")
+var (
+	templatesFolder = defaultTemplatesFolder
+)
 
-	flag.Parse()
+func compile(proseFile, targetFolder string) {
 
-	log.Infof("GoProSe: compiling %s", *proseFile)
+	log.Infof("GoProSe: compiling %s", proseFile)
 
-	parser, err := parser.NewProSeParser(*proseFile, false)
+	parser, err := parser.NewProSeParser(proseFile, false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,8 +42,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Infof("GoProse: generating code at %s", *targetFolder)
-	codeGenerator, err := templates.NewTemplateManager("templates/", *targetFolder, intermediateProgram)
+	log.Infof("GoProse: generating code at %s", targetFolder)
+	codeGenerator, err := templates.NewTemplateManager(templatesFolder, targetFolder, intermediateProgram)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,4 +52,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func main() {
+	log.SetLevel(log.DebugLevel)
+
+	var proseFile = flag.String("p", "proseFiles/max.prose", "source prose file")
+	var targetFolder = flag.String("o", "_generatedModules/", "target folder")
+
+	flag.Parse()
+
+	compile(*proseFile, *targetFolder)
 }

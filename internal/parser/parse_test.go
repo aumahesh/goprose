@@ -12,7 +12,7 @@ func TestProSeParser_Parse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
 	proseFiles := []string{
-		"test.prose",
+		"example.prose",
 		"max.prose",
 		"tree_coloring.prose",
 		"pCover.prose",

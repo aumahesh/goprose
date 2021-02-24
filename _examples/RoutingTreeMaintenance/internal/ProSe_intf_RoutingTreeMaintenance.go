@@ -6,17 +6,16 @@ import (
 	"context"
 )
 
-type RoutingTreeMaintenance_intf interface {
+type ProSe_intf_RoutingTreeMaintenance interface {
 	EventHandler(context.Context)
 	Listener(context.Context)
 }
 
-func NewRoutingTreeMaintenance_intf(id string, mcast string) (RoutingTreeMaintenance_intf, error) {
-	x := &RoutingTreeMaintenance_impl{}
+func NewProSe_intf_RoutingTreeMaintenance(id string, mcast string) (ProSe_intf_RoutingTreeMaintenance, error) {
+	x := &ProSe_impl_RoutingTreeMaintenance{}
 	err := x.init(id, mcast)
 	if err != nil {
 		return nil, err
 	}
 	return x, nil
 }
-

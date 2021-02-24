@@ -23,8 +23,8 @@ func (g *translator) do() error {
 	g.intermediateProgram.Org = defaultOrg
 	g.intermediateProgram.ModuleName = StringValue(g.parsedProgram.Name)
 	g.intermediateProgram.PackageName = "internal"
-	g.intermediateProgram.InterfaceName = fmt.Sprintf("%s_intf", StringValue(g.parsedProgram.Name))
-	g.intermediateProgram.ImplementationName = fmt.Sprintf("%s_impl", StringValue(g.parsedProgram.Name))
+	g.intermediateProgram.InterfaceName = fmt.Sprintf("ProSe_intf_%s", StringValue(g.parsedProgram.Name))
+	g.intermediateProgram.ImplementationName = fmt.Sprintf("ProSe_impl_%s", StringValue(g.parsedProgram.Name))
 	g.intermediateProgram.SensorName = StringValue(g.parsedProgram.Sensor)
 
 	g.intermediateProgram.Constants = map[string]*Variable{}

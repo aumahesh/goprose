@@ -1,60 +1,50 @@
-// +build {{.ModuleName}}
+// +build example
 
-package {{.PackageName}}
+package internal
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"time"
-	"fmt"
 
-{{ range $Name, $Import := .Imports }}
-	"{{$Import.ImportPath}}"
-{{ end }}
-
-	log "github.com/sirupsen/logrus"
-	"github.com/golang/protobuf/proto"
+	p "aumahesh.com/prose/example/models"
 	"github.com/dmichael/go-multicast/multicast"
-	p "{{.Org}}/{{.ModuleName}}/models"
+	"github.com/golang/protobuf/proto"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	inactivityTimeout = time.Duration(2) * time.Minute
 	heartbeatInterval = time.Duration(1) * time.Minute
-	maxDatagramSize = 1024
+	maxDatagramSize   = 1024
 )
 
 var (
-	{{ range $Name, $Const := .Constants }}
-	{{ if (isConstantString $Name) }}
-	{{$Name}} {{getConstantType $Name}} = "{{$Const.DefaultValue}}"
-	{{ else }}
-	{{$Name}} {{getConstantType $Name}} = {{$Const.DefaultValue}}
-	{{ end }}
-	{{- end }}
+	a int64 = 0
 )
 
 type NeighborState struct {
-	id string
-	state *p.State
-	discoveredAt time.Time
-	updatedAt time.Time
+	id              string
+	state           *p.State
+	discoveredAt    time.Time
+	updatedAt       time.Time
 	lastHeartBeatAt time.Time
-	stateChangedAt time.Time
-	active bool
+	stateChangedAt  time.Time
+	active          bool
 }
 
-type {{.ImplementationName}} struct {
-	id string
-	state *p.State
-	mcastAddr string
-	mcastConn *net.UDPConn
+type ProSe_impl_example struct {
+	id             string
+	state          *p.State
+	mcastAddr      string
+	mcastConn      *net.UDPConn
 	receiveChannel chan *p.NeighborUpdate
-	hbChannel chan *p.NeighborHeartBeat
-	neighborState map[string]*NeighborState
+	hbChannel      chan *p.NeighborHeartBeat
+	neighborState  map[string]*NeighborState
 }
 
-func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
+func (this *ProSe_impl_example) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
@@ -70,60 +60,57 @@ func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 
 	this.neighborState = map[string]*NeighborState{
 		this.id: &NeighborState{
-					id: this.id,
-					state: this.state,
-					discoveredAt: time.Now(),
-					updatedAt: time.Now(),
-					lastHeartBeatAt: time.Now(),
-					stateChangedAt: time.Now(),
-					active: true,
-				},
+			id:              this.id,
+			state:           this.state,
+			discoveredAt:    time.Now(),
+			updatedAt:       time.Now(),
+			lastHeartBeatAt: time.Now(),
+			stateChangedAt:  time.Now(),
+			active:          true,
+		},
 	}
 
-	{{ range $Name, $Expr := .ConstantInitFunctions -}}
-		{{$Name}} = this.initConstant{{$Name}}()
-	{{ end }}
+	a = this.initConstanta()
 
 	this.initState()
 
 	return nil
 }
 
-func (this *{{.ImplementationName}}) initState() {
-	{{ range $Name, $Var := .Variables -}}
-        {{ if (isString $Name) -}}
-			this.state.{{protoName $Name}} = "{{$Var.DefaultValue}}"
-        {{ else -}}
-			this.state.{{protoName $Name}} = {{$Var.DefaultValue}}
-        {{ end -}}
-	{{- end }}
+func (this *ProSe_impl_example) initState() {
+	this.state.Msg = ""
+	this.state.St = 0
+	this.state.Timer = 0
+	this.state.Tmp = false
+	this.state.X = 0
 
-	{{ range $Name, $Expr := .VariableInitFunctions -}}
-		this.state.{{protoName $Name}} = this.initVarible{{protoName $Name}}()
-	{{ end }}
+	this.state.Msg = this.initVaribleMsg()
+	this.state.Tmp = this.initVaribleTmp()
+	this.state.X = this.initVaribleX()
+
 }
 
-{{ range $Name, $Expr := .ConstantInitFunctions -}}
-func (this *{{$.ImplementationName}}) initConstant{{$Name}}() {{getConstantType $Name}} {
-	{{ range .Code }}
-	{{.}}
-	{{ end }}
-	return {{$Expr.FinalResult}}
+func (this *ProSe_impl_example) initConstanta() int64 {
+
+	return int64(20)
 }
 
-{{ end -}}
+func (this *ProSe_impl_example) initVaribleMsg() string {
 
-{{ range $Name, $Expr := .VariableInitFunctions -}}
-	func (this *{{$.ImplementationName}}) initVarible{{protoName $Name}}() {{getType $Name}} {
-    {{ range .Code }}
-	{{.}}
-    {{ end }}
-	return {{$Expr.FinalResult}}
+	return "Hello, World!"
 }
 
-{{ end -}}
+func (this *ProSe_impl_example) initVaribleTmp() bool {
 
-func (this *{{.ImplementationName}}) EventHandler(ctx context.Context) {
+	return true
+}
+
+func (this *ProSe_impl_example) initVaribleX() int64 {
+
+	return ((-int64(10)) + int64(500))
+}
+
+func (this *ProSe_impl_example) EventHandler(ctx context.Context) {
 	heartbeatTicker := time.NewTicker(heartbeatInterval)
 	for {
 		select {
@@ -131,17 +118,19 @@ func (this *{{.ImplementationName}}) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id: s.Id,
-					discoveredAt: time.Now(),
-					active: true,
+					id:             s.Id,
+					discoveredAt:   time.Now(),
+					active:         true,
 					stateChangedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].state = &p.State{
-				{{ range $Name, $Type := .Variables -}}
-					{{ $pName := (protoName $Name) }}
-					{{$pName}}: s.State.{{$pName}},
-				{{- end }}
+
+				Msg:   s.State.Msg,
+				St:    s.State.St,
+				Timer: s.State.Timer,
+				Tmp:   s.State.Tmp,
+				X:     s.State.X,
 			}
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
@@ -158,12 +147,12 @@ func (this *{{.ImplementationName}}) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id: s.Id,
-					state: &p.State{},
-					discoveredAt: time.Now(),
-					active: true,
+					id:             s.Id,
+					state:          &p.State{},
+					discoveredAt:   time.Now(),
+					active:         true,
 					stateChangedAt: time.Now(),
-					updatedAt: time.Now(),
+					updatedAt:      time.Now(),
 				}
 			}
 			this.neighborState[s.Id].lastHeartBeatAt = time.Now()
@@ -184,7 +173,7 @@ func (this *{{.ImplementationName}}) EventHandler(ctx context.Context) {
 	}
 }
 
-func (this *{{.ImplementationName}}) evaluateNeighborStates() {
+func (this *ProSe_impl_example) evaluateNeighborStates() {
 	for id, nbr := range this.neighborState {
 		if nbr.updatedAt.Add(inactivityTimeout).Before(time.Now()) {
 			nbr.active = false
@@ -201,7 +190,7 @@ func (this *{{.ImplementationName}}) evaluateNeighborStates() {
 	}
 }
 
-func (this *{{.ImplementationName}}) isNeighborUp(id string) bool {
+func (this *ProSe_impl_example) isNeighborUp(id string) bool {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return false
@@ -209,11 +198,11 @@ func (this *{{.ImplementationName}}) isNeighborUp(id string) bool {
 	return nbr.active
 }
 
-func (this *{{.ImplementationName}}) neighbors() map[string]*NeighborState {
+func (this *ProSe_impl_example) neighbors() map[string]*NeighborState {
 	return this.neighborState
 }
 
-func (this *{{.ImplementationName}}) setNeighbor(id string, state bool) bool {
+func (this *ProSe_impl_example) setNeighbor(id string, state bool) bool {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return false
@@ -222,7 +211,7 @@ func (this *{{.ImplementationName}}) setNeighbor(id string, state bool) bool {
 	return nbr.active
 }
 
-func (this *{{.ImplementationName}}) getNeighbor(id string, stateVariable string) (*NeighborState, error) {
+func (this *ProSe_impl_example) getNeighbor(id string, stateVariable string) (*NeighborState, error) {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return nil, fmt.Errorf("%s not found in neighbors", id)
@@ -230,29 +219,28 @@ func (this *{{.ImplementationName}}) getNeighbor(id string, stateVariable string
 	return nbr, nil
 }
 
-{{ range $Name, $Stmt := .Statements }}
-func (this *{{$.ImplementationName}}) {{$Name}}() bool {
+func (this *ProSe_impl_example) doAction0() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: {{$Name}}")
+	log.Debugf("Executing: doAction0")
 
-	{{ range .Code }}
-	{{.}}
-	{{- end }}
+	if (!(this.state.St == int64(1))) && (this.state.Timer >= a) {
+		this.state.St = int64(2)
+		this.state.Timer = int64(10)
+		stateChanged = true
+	}
 
-	log.Debugf("{{$Name}}: state changed: %v", stateChanged)
+	log.Debugf("doAction0: state changed: %v", stateChanged)
 
 	return stateChanged
 }
-{{end }}
 
-func (this *{{.ImplementationName}}) updateLocalState() bool {
+func (this *ProSe_impl_example) updateLocalState() bool {
 	stateChanged := false
 
 	statements := []func() bool{
-{{ range $Name, $Stmt := .Statements }}
-		this.{{$Name}},
-{{ end }}
+
+		this.doAction0,
 	}
 
 	for _, stmtFunc := range statements {
@@ -264,40 +252,42 @@ func (this *{{.ImplementationName}}) updateLocalState() bool {
 	return stateChanged
 }
 
-func (this *{{.ImplementationName}}) broadcastLocalState() (int, error) {
+func (this *ProSe_impl_example) broadcastLocalState() (int, error) {
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
-			{{ range $Name, $Type := .Variables -}}
-				{{ $pName := (protoName $Name) }}
-                {{$pName}}: this.state.{{$pName}},
-			{{- end }}
+
+			Msg:   this.state.Msg,
+			St:    this.state.St,
+			Timer: this.state.Timer,
+			Tmp:   this.state.Tmp,
+			X:     this.state.X,
 		},
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_StateUpdate,
-		Src: this.id,
+		Src:  this.id,
 		Msg:  &p.BroadcastMessage_Upd{updMessage},
 	}
 
 	return this.send(broadcastMessage)
 }
 
-func (this *{{.ImplementationName}}) sendHeartBeat() (int, error) {
+func (this *ProSe_impl_example) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
-		Id: this.id,
+		Id:     this.id,
 		SentAt: time.Now().Unix(),
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_Heartbeat,
-		Src: this.id,
+		Src:  this.id,
 		Msg:  &p.BroadcastMessage_Hb{hbMessage},
 	}
 
 	return this.send(broadcastMessage)
 }
 
-func (this *{{.ImplementationName}}) send(msg *p.BroadcastMessage) (int, error) {
+func (this *ProSe_impl_example) send(msg *p.BroadcastMessage) (int, error) {
 	log.Debugf("Sending: %+v", msg)
 	data, err := proto.Marshal(msg)
 	if err != nil {
@@ -306,7 +296,7 @@ func (this *{{.ImplementationName}}) send(msg *p.BroadcastMessage) (int, error) 
 	return this.mcastConn.Write(data)
 }
 
-func (this *{{.ImplementationName}}) msgHandler(src *net.UDPAddr, n int, b []byte) {
+func (this *ProSe_impl_example) msgHandler(src *net.UDPAddr, n int, b []byte) {
 	log.Debugf("received message (%d bytes) from %s", n, src.String())
 	broadcastMessage := &p.BroadcastMessage{}
 	err := proto.Unmarshal(b[:n], broadcastMessage)
@@ -325,7 +315,7 @@ func (this *{{.ImplementationName}}) msgHandler(src *net.UDPAddr, n int, b []byt
 	}
 }
 
-func (this *{{.ImplementationName}}) Listener(ctx context.Context) {
+func (this *ProSe_impl_example) Listener(ctx context.Context) {
 	addr, err := net.ResolveUDPAddr("udp4", this.mcastAddr)
 	if err != nil {
 		log.Errorf("Error resolving mcast address: %s", err)

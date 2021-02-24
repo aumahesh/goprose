@@ -1,4 +1,4 @@
-// +build RoutingTreeMaintenance
+// +build max
 
 package main
 
@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"aumahesh.com/prose/RoutingTreeMaintenance/internal"
+	"aumahesh.com/prose/max/internal"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -23,9 +23,9 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	log.Debugf("%s: Hello, world!", id)
 
-	impl, err := internal.NewProSe_intf_RoutingTreeMaintenance(id, defaultMcastAddress)
+	impl, err := internal.NewProSe_intf_max(id, defaultMcastAddress)
 	if err != nil {
-		log.Errorf("error instantiating ProSe_intf_RoutingTreeMaintenance: %s", err)
+		log.Errorf("error instantiating ProSe_intf_max: %s", err)
 		panic(err)
 	}
 

@@ -22,10 +22,11 @@ begin
 	(st.j != reset) && (P.j == k) && (st.k == reset) && (sn.j + 1 == sn.k)
 		-> st.j, sn.j = reset, sn.k;
 	|
-	(st.j == reset) && (forall k: k in neighborhood.neighbors() : (P.k != j) || ( (st.k == reset) && (sn.j == sn.k)))
+	(st.j == reset) && ( forall k: k in neighborhood.neighbors() : (P.k == j) => ( (st.k != reset) && (sn.j == sn.k) ) )
 		-> st.j = normal;
 	|
-	( ( (P.j != k) || (st.k == reset) )) || ( (st.j != reset) && (sn.k == sn.j) ) || ( (  (P.j != k) || (st.k != reset) )) ||  ( (st.j != reset) && (sn.k == sn.j + 1) || (sn.k == sn.j) )
+	( ! ( ( ( (P.j == k) && (st.k != reset) ) => ( (st.j != reset) && (sn.k == sn.j) ) )
+	&& ( (P.j == k) && (st.k == reset) ) => ( ( (st.j != reset) && (sn.k == sn.j + 1) ) || (sn.k == sn.j) ) ) )
 		-> st.j, sn.j = st.k, sn.k;
 
 end

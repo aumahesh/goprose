@@ -1,4 +1,4 @@
-program test
+program example
 
 sensor j
 
@@ -8,7 +8,7 @@ int a = 20;
 
 var
 
-public int x.j = 100 + 500;
+public int x.j = -10 + 500;
 private bool tmp.j = true;
 string msg.j = "Hello, World!";
 public int st.j; // 1- sleep, 2- probe, 3- awake, 4- readyoff
@@ -16,10 +16,10 @@ private int timer.j;
 
 begin
 
-(st.j == 1) && (timer.j >= a) -> st.j = 2; timer.j = 0;
+!(st.j == 1) && (timer.j >= a) -> st.j = 2; timer.j = 10;
 
-|
+//|
 
-(tmp.j => (x.j == 50)) -> msg.j = "Implied";
+//(!(tmp.j => (x.j == 50))) -> msg.j = "Implied";
 
 end
