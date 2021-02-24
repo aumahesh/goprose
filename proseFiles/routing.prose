@@ -1,4 +1,5 @@
 program RoutingTreeMaintenance
+import "neighborhood"
 sensor j
 const
 	int CMAX = 100;
@@ -6,19 +7,19 @@ const
 var
 	public int inv.j, dist.j;
 	public bool up.j;
-	private int p.j;
+	private string p.j;
 begin
-	dist.k < dist.j && up.k && inv.k < CMAX && inv.k < inv.j
+	(dist.k < dist.j) && (neighborhood.up(k)) && (inv.k < CMAX) && (inv.k < inv.j)
 		-> p.j, inv.j = k, inv.k;
 	|
-	dist.k < dist.j && up.k && inv.k+1 < CMAX && inv.k+1 < inv.j
+	(dist.k < dist.j) && (neighborhood.up(k)) && (inv.k+1 < CMAX) && (inv.k+1 < inv.j)
 		-> p.j, inv.j = k, inv.k+1;
 	|
-	p.j != NULL && (!up.(p.j) || inv.(p.j) >= CMAX ||
-		(dist.(p.j) < dist.j && inv.j != inv.(p.j))) ||
-		(dist.(p.j) > dist.j && inv.j != inv.(p.j)+1)
-		-> p.j, inv.j = NULL, CMAX;
+	(p.j != "") && (neighborhood.up(p.j) == false)|| (inv.(p.j) >= CMAX) ||
+		( (dist.(p.j) < dist.j) && (inv.j != inv.(p.j)) ) ||
+		( (dist.(p.j) > dist.j) && (inv.j != inv.(p.j)+1) )
+		-> p.j, inv.j = "", CMAX;
 	|
-	p.j == NULL && inv.j < CMAX
+	(p.j == "") && (inv.j < CMAX)
 		-> inv.j = CMAX;
 end

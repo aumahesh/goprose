@@ -11,12 +11,13 @@ int green = 1;
 
 var
 
-public bool up.j = true;
-public int P.j, root.j, color.j = j, j, 1;
+public bool tmp.j;
+public string P.j, root.j = j, j;
+public int color.j = green;
 
 begin
 
-(color.j == green) && (!up.(p.j) || color.(P.j) == red) -> color.j = red;
+(color.j == green) && ( (neighborhood.up(P.j) == false) || (color.(P.j) == red) ) -> color.j = red;
 
 |
 
@@ -28,10 +29,10 @@ begin
 
 |
 
-up.j -> up.j = false;
+neighborhood.up(j) -> tmp.j = neighborhood.set(j, false);
 
 |
 
-!up.j -> up.j, P.j, color.j = true, j, red;
+neighborhood.up(j) == false -> tmp.j, P.j, color.j = neighborhood.set(j, true), j, red;
 
 end

@@ -502,12 +502,13 @@ func (e *Expression) ForAll(forall *parser.ForAllExpr) (string, error) {
 	loopResultTemp := e.manager.NewTempVariable("unknown")
 	code := []string{
 		fmt.Sprintf("%s := true", loopResultTemp),
-		fmt.Sprintf("for _, %s := range %s {", l1, loopOver.FinalResult),
+		fmt.Sprintf("for _, neighbor := range %s {", loopOver.FinalResult),
 	}
 	code = append(code, loopCode...)
 	code = append(code, []string{
-		fmt.Sprintf("\tif %s && !%s {", loopResultTemp, loopOver.FinalResult),
+		fmt.Sprintf("\tif %s && !%s {", loopResultTemp, loopExpr.FinalResult),
 		fmt.Sprintf("\t\t%s = false", loopResultTemp),
+		fmt.Sprintf("\t\tbreak"),
 		fmt.Sprintf("\t}"),
 		fmt.Sprintf("}"),
 	}...)
@@ -537,11 +538,26 @@ func (e *Expression) FunctionCall(funcCall *parser.FuncCall) (string, error) {
 		argsTemp = append(argsTemp, expr.FinalResult)
 	}
 
+	packageId := StringValue(funcCall.PackageId)
+	functionName := StringValue(funcCall.FunctionName)
+
 	funcTemp := e.manager.NewTempVariable("unknown")
-	fcall := fmt.Sprintf("%s.%s", StringValue(funcCall.PackageId), StringValue(funcCall.FunctionName))
+	fcall := fmt.Sprintf("%s.%s", packageId, functionName)
 	// special handling
-	if StringValue(funcCall.PackageId) == "time" && StringValue(funcCall.FunctionName) == "Now" {
+	if packageId == "time" && functionName == "Now" {
 		fcall = "time.Now().Unix"
+	}
+	if packageId == "neighborhood" {
+		switch functionName {
+		case "neighbors":
+			fcall = "this.neighbors"
+		case "up":
+			fcall = "this.isNeighborUp"
+		case "set":
+			fcall = "this.setNeighbor"
+		default:
+			return "", fmt.Errorf("unknown function in %s package", packageId)
+		}
 	}
 	code := fmt.Sprintf("%s := %s(%s)",
 		funcTemp, fcall, strings.Join(argsTemp, ", "))
@@ -617,15 +633,10 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 			vtemp := e.manager.NewTempVariable("unknown")
 			code := []string{
 				fmt.Sprintf("var %s %s", vtemp, GetProseTypeString(v.ProseType)),
-				fmt.Sprintf(`if this.id == this.state.%s`, util.ToCamelCase(vv.Name)),
-				fmt.Sprintf("/t%s = this.state.%s", vtemp, util.ToCamelCase(v.Name)),
+				fmt.Sprintf(`if neighbor.id == this.state.%s {`, util.ToCamelCase(vv.Name)),
+				fmt.Sprintf("\t%s = this.state.%s", vtemp, util.ToCamelCase(v.Name)),
 				fmt.Sprintf("} else {"),
-				fmt.Sprintf("\tfor _, nbr := range this.neighborState {"),
-				fmt.Sprintf("\t\tif nbr.id == this.state.%s {", util.ToCamelCase(vv.Name)),
-				fmt.Sprintf("\t\t%s = nbr.%s", vtemp, util.ToCamelCase(v.Name)),
-				fmt.Sprintf("\t\t\tbreak"),
-				fmt.Sprintf("\t\t}"),
-				fmt.Sprintf("\t}"),
+				fmt.Sprintf("\tcontinue"),
 				fmt.Sprintf("}"),
 			}
 			e.Code = append(e.Code, code...)

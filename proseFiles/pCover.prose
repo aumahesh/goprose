@@ -1,12 +1,15 @@
 program pCover
 
-import "github.com/aumahesh/coverage"
-import "rand"
+import "math/rand"
 
 sensor j
 
 const
 	int X, Y, Z, S, W, OnThreshold, OffThreshold = 10, 20, 30, 40, 50, 100, 200;
+	int sleep = 1;
+	int probe = 2;
+	int awake = 3;
+	int readyoff = 4;
 
 var
 	public int st.j; // 1- sleep, 2- probe, 3- awake, 4- readyoff
@@ -14,19 +17,19 @@ var
 
 begin
 
-(st.j == 1) && (timer.j >= X) -> st.j = 2; timer.j = 0;
+(st.j == sleep) && (timer.j >= X) -> st.j = probe; timer.j = 0;
 |
-(st.j == 2) && (timer.j >= Y) && (coverage.local() > OnThreshold) -> st.j = 1; timer.j = 0;
+(st.j == probe) && (timer.j >= Y) && (rand.Int63n(100) > OnThreshold) -> st.j = sleep; timer.j = 0;
 |
-(st.j == 2) && (timer.j >= Y) && (coverage.local() <= OffThreshold) -> st.j = 3; timer.j = rand.RandInt(0, S);
+(st.j == probe) && (timer.j >= Y) && (rand.Int63n(100) <= OffThreshold) -> st.j = awake; timer.j = rand.Int63n(S);
 |
-(st.j == 3) && (timer.j >= Z) -> st.j = 4; timer.j = 0;
+(st.j == awake) && (timer.j >= Z) -> st.j = readyoff; timer.j = 0;
 |
-(st.j == 4) && (timer.j >= W) -> st.j = 3; timer.j = rand.RandInt(0, S);
+(st.j == readyoff) && (timer.j >= W) -> st.j = awake; timer.j = rand.Int63n(S);
 |
-(st.j == 4) && (coverage.local() > OffThreshold) -> st.j = 1; timer.j = 0;
+(st.j == readyoff) && (rand.Int63n(100) > OffThreshold) -> st.j = sleep; timer.j = 0;
 |
-((st.j == 1) && (timer.j <= X)) || ((st.j == 2) && (timer.j <= Y)) || ((st.j == 3) && (timer.j <= Z)) || ((st == 4) && (timer.j <= W)) -> timer.j = timer.j + 1;
+((st.j == sleep) && (timer.j <= X)) || ((st.j == probe) && (timer.j <= Y)) || ((st.j == awake) && (timer.j <= Z)) || ((st.j == readyoff) && (timer.j <= W)) -> timer.j = timer.j + 1;
 
 end
 

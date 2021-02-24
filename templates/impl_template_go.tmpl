@@ -24,12 +24,12 @@ const (
 )
 
 var (
-	{{ range $Name, $Const := .Constants -}}
-		{{ if (isConstantString $Name) -}}
+	{{ range $Name, $Const := .Constants }}
+	{{ if (isConstantString $Name) }}
 	{{$Name}} {{getConstantType $Name}} = "{{$Const.DefaultValue}}"
-		{{ else -}}
+	{{ else }}
 	{{$Name}} {{getConstantType $Name}} = {{$Const.DefaultValue}}
-		{{ end -}}
+	{{ end }}
 	{{- end }}
 )
 
@@ -195,6 +195,19 @@ func (this *{{.ImplementationName}}) isNeighborUp(id string) bool {
 	if !ok {
 		return false
 	}
+	return nbr.active
+}
+
+func (this *{{.ImplementationName}}) neighbors() map[string]*NeighborState {
+	return this.neighborState
+}
+
+func (this *{{.ImplementationName}}) setNeighbor(id string, state bool) bool {
+	nbr, ok := this.neighborState[id]
+	if !ok {
+		return false
+	}
+	nbr.active = state
 	return nbr.active
 }
 

@@ -11,21 +11,21 @@ const
 
 var
 	public int st.j = initiate;
-	public int P.j = j;
+	public string P.j = j;
 	public int sn.j = 1;
 
 begin
 
-	st.j == initiate && P.j == j
+	(st.j == initiate) && (P.j == j)
 		-> st.j, sn.j = reset, sn.j + 1;
 	|
-	st.j != reset && P.j == k && st.k == reset && sn.j + 1 == sn.k
+	(st.j != reset) && (P.j == k) && (st.k == reset) && (sn.j + 1 == sn.k)
 		-> st.j, sn.j = reset, sn.k;
 	|
-	st.j == reset && (forall k: k in neighborhood.neighbors() : (P.k != j) || (st.k == reset && sn.j == sn.k))
+	(st.j == reset) && (forall k: k in neighborhood.neighbors() : (P.k != j) || ( (st.k == reset) && (sn.j == sn.k)))
 		-> st.j = normal;
 	|
-	( !(P.j == k && st.k != reset) || (st.j != reset && sn.k == sn.j) ) || ( !(P.j == k && st.k == reset) || ( (st.j != reset && sn.k == sn.j + 1) || sn.k == sn.j ) )
+	( ( (P.j != k) || (st.k == reset) )) || ( (st.j != reset) && (sn.k == sn.j) ) || ( (  (P.j != k) || (st.k != reset) )) ||  ( (st.j != reset) && (sn.k == sn.j + 1) || (sn.k == sn.j) )
 		-> st.j, sn.j = st.k, sn.k;
 
 end
