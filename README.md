@@ -67,6 +67,8 @@ end
 
 ```
 
+The complete grammar for ProSe programs is available [here](https://github.com/aumahesh/goprose/blob/main/internal/parser/prose.go#L1). 
+
 ## Generated Code
 
 goprose compiles the program into Go Module. 
