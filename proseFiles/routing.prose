@@ -1,12 +1,12 @@
 program RoutingTreeMaintenance
 import "neighborhood"
+import "math/rand"
 sensor j
 const
 	int CMAX = 100;
  	int NULL = 0;
 var
-	public int inv.j, dist.j;
-	public bool up.j;
+	public int inv.j, dist.j = 0, rand.Int63n(10);
 	private string p.j;
 begin
 	(dist.k < dist.j) && (neighborhood.up(k)) && (inv.k < CMAX) && (inv.k < inv.j)

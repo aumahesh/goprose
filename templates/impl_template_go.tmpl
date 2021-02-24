@@ -19,7 +19,7 @@ import (
 
 const (
 	inactivityTimeout = time.Duration(2) * time.Minute
-	heartbeatInterval = time.Duration(10) * time.Second
+	heartbeatInterval = time.Duration(1) * time.Minute
 	maxDatagramSize = 1024
 )
 
@@ -145,15 +145,18 @@ func (this *{{.ImplementationName}}) EventHandler(ctx context.Context) {
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
 			this.updateLocalState()
-			_, err := this.broadcastLocalState()
-			if err != nil {
-				log.Errorf("Error broadcasting local state to neighbors")
+			if stateChanged := this.updateLocalState(); stateChanged {
+				this.broadcastLocalState()
+				if err != nil {
+					log.Errorf("Error broadcasting local state to neighbors")
+				}
 			}
 		case s := <-this.hbChannel:
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
 					id: s.Id,
+					state: &p.State{},
 					discoveredAt: time.Now(),
 					active: true,
 					stateChangedAt: time.Now(),
@@ -164,6 +167,9 @@ func (this *{{.ImplementationName}}) EventHandler(ctx context.Context) {
 			this.evaluateNeighborStates()
 			if stateChanged := this.updateLocalState(); stateChanged {
 				this.broadcastLocalState()
+				if err != nil {
+					log.Errorf("Error broadcasting local state to neighbors")
+				}
 			}
 		case <-heartbeatTicker.C:
 			this.sendHeartBeat()
@@ -215,9 +221,13 @@ func (this *{{.ImplementationName}}) setNeighbor(id string, state bool) bool {
 func (this *{{$.ImplementationName}}) {{$Name}}() bool {
 	stateChanged := false
 
+	log.Debugf("Executing: {{$Name}}")
+
 	{{ range .Code }}
 	{{.}}
 	{{- end }}
+
+	log.Debugf("{{$Name}}: state changed: %v", stateChanged)
 
 	return stateChanged
 }
