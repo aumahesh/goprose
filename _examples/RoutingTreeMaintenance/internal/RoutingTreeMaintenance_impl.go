@@ -142,9 +142,11 @@ func (this *RoutingTreeMaintenance_impl) EventHandler(ctx context.Context) {
 			this.evaluateNeighborStates()
 			this.updateLocalState()
 			if stateChanged := this.updateLocalState(); stateChanged {
-				this.broadcastLocalState()
+				n, err := this.broadcastLocalState()
 				if err != nil {
 					log.Errorf("Error broadcasting local state to neighbors")
+				} else {
+					log.Debugf("%s: sent state update: %d bytes", this.id, n)
 				}
 			}
 		case s := <-this.hbChannel:
@@ -162,9 +164,11 @@ func (this *RoutingTreeMaintenance_impl) EventHandler(ctx context.Context) {
 			this.neighborState[s.Id].lastHeartBeatAt = time.Now()
 			this.evaluateNeighborStates()
 			if stateChanged := this.updateLocalState(); stateChanged {
-				this.broadcastLocalState()
+				n, err := this.broadcastLocalState()
 				if err != nil {
 					log.Errorf("Error broadcasting local state to neighbors")
+				} else {
+					log.Debugf("%s: sent heartbeat: %d bytes", this.id, n)
 				}
 			}
 		case <-heartbeatTicker.C:
