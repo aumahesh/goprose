@@ -1,10 +1,12 @@
 program max
 
+import "math/rand"
+
 sensor j
 
 var
 
-public int x.j = j;
+public int x.j = rand.Int63n(1000);
 
 begin
 

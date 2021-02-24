@@ -7,6 +7,10 @@ import (
 	"net"
 	"time"
 
+{{ range $Name, $Import := .Imports }}
+	"{{$Import.ImportPath}}"
+{{ end }}
+
 	log "github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/proto"
 	"github.com/dmichael/go-multicast/multicast"
@@ -63,7 +67,17 @@ func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 	this.receiveChannel = make(chan *p.NeighborUpdate, 10)
 	this.hbChannel = make(chan *p.NeighborHeartBeat, 10)
 
-	this.neighborState = map[string]*NeighborState{}
+	this.neighborState = map[string]*NeighborState{
+		this.id: &NeighborState{
+					id: this.id,
+					state: this.state,
+					discoveredAt: time.Now(),
+					updatedAt: time.Now(),
+					lastHeartBeatAt: time.Now(),
+					stateChangedAt: time.Now(),
+					active: true,
+				},
+	}
 
 	{{ range $Name, $Expr := .ConstantInitFunctions -}}
 		{{$Name}} = this.initConstant{{$Name}}()
@@ -265,9 +279,6 @@ func (this *{{.ImplementationName}}) msgHandler(src *net.UDPAddr, n int, b []byt
 		return
 	}
 	log.Debugf("received: %+v", broadcastMessage)
-	if broadcastMessage.Src == this.id {
-		return
-	}
 	switch broadcastMessage.Type {
 	case p.MessageType_Heartbeat:
 		this.hbChannel <- broadcastMessage.GetHb()

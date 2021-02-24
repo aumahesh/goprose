@@ -149,11 +149,12 @@ func (g *translator) doVariableDeclarations() error {
 }
 
 func (g *translator) doInitFunction(id string, defaultValue *parser.Expr) (*Expression, error) {
-	initExpr, err := NewExpression(defaultValue,
+	initExpr := NewExpression(defaultValue,
 		g.intermediateProgram.SensorName,
 		g.intermediateProgram.Constants,
 		g.intermediateProgram.Variables,
 		g.tempsManager)
+	err := initExpr.GenerateCode()
 	if err != nil {
 		return nil, fmt.Errorf("Error: error in constructing init function for %s @ %s: %s",
 			id, defaultValue.Pos, err)

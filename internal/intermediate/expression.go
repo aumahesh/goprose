@@ -8,7 +8,26 @@ import (
 	"github.com/aumahesh/goprose/internal/util"
 )
 
+type ExpressionType int
+
+const (
+	ExpressionTypeInvalid ExpressionType = iota
+	ExpressionTypeLocal
+	ExpressionTypeRemote
+)
+
+func mergeExpressionTypes(e1, e2 ExpressionType) ExpressionType {
+	if e1 == ExpressionTypeInvalid || e2 == ExpressionTypeInvalid {
+		return ExpressionTypeInvalid
+	}
+	if e1 == ExpressionTypeRemote || e2 == ExpressionTypeRemote {
+		return ExpressionTypeRemote
+	}
+	return ExpressionTypeLocal
+}
+
 type Expression struct {
+	expr        *parser.Expr
 	manager     *TempsManager
 	constants   map[string]*Variable
 	variables   map[string]*Variable
@@ -18,27 +37,221 @@ type Expression struct {
 	FinalResult string
 }
 
-func NewExpression(expr *parser.Expr, sensorId string, constants, variables map[string]*Variable, manager *TempsManager) (*Expression, error) {
+func NewExpression(expr *parser.Expr, sensorId string, constants, variables map[string]*Variable, manager *TempsManager) *Expression {
 	e := &Expression{
+		expr:      expr,
 		manager:   manager,
 		constants: constants,
 		variables: variables,
 		sensorId:  sensorId,
 		Code:      []string{},
+		Temps:     []string{},
 	}
 
-	if expr.Assignment == nil {
-		return e, nil
+	return e
+}
+
+func (e *Expression) GetExpressionType() (ExpressionType, error) {
+	if e.expr.Assignment == nil {
+		return ExpressionTypeInvalid, nil
 	}
 
-	t, err := e.Assignment(expr.Assignment)
+	return e.getAssignmentType(e.expr.Assignment)
+}
+
+func (e *Expression) getAssignmentType(assignment *parser.Assignment) (ExpressionType, error) {
+	b1, err := e.getEqualityType(assignment.Equality)
 	if err != nil {
-		return nil, err
+		return ExpressionTypeInvalid, err
+	}
+	if assignment.Next == nil {
+		return b1, err
+	}
+	b2, err := e.getEqualityType(assignment.Next)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	return mergeExpressionTypes(b1, b2), nil
+}
+
+func (e *Expression) getEqualityType(equality *parser.Equality) (ExpressionType, error) {
+	b1, err := e.getLogicalType(equality.Logical)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	if equality.Next == nil {
+		return b1, err
+	}
+	b2, err := e.getEqualityType(equality.Next)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	return mergeExpressionTypes(b1, b2), nil
+}
+
+func (e *Expression) getLogicalType(logical *parser.Logical) (ExpressionType, error) {
+	b1, err := e.getComparisonType(logical.Comparison)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	if logical.Next == nil {
+		return b1, err
+	}
+	b2, err := e.getLogicalType(logical.Next)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	return mergeExpressionTypes(b1, b2), nil
+}
+
+func (e *Expression) getComparisonType(comparison *parser.Comparison) (ExpressionType, error) {
+	b1, err := e.getAdditionType(comparison.Addition)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	if comparison.Next == nil {
+		return b1, err
+	}
+	b2, err := e.getComparisonType(comparison.Next)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	return mergeExpressionTypes(b1, b2), nil
+}
+
+func (e *Expression) getAdditionType(addition *parser.Addition) (ExpressionType, error) {
+	b1, err := e.getMultiplicationType(addition.Multiplication)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	if addition.Next == nil {
+		return b1, err
+	}
+	b2, err := e.getAdditionType(addition.Next)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	return mergeExpressionTypes(b1, b2), nil
+}
+
+func (e *Expression) getMultiplicationType(multiplication *parser.Multiplication) (ExpressionType, error) {
+	b1, err := e.getUnaryType(multiplication.Unary)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	if multiplication.Next == nil {
+		return b1, err
+	}
+	b2, err := e.getMultiplicationType(multiplication.Next)
+	if err != nil {
+		return ExpressionTypeInvalid, err
+	}
+	return mergeExpressionTypes(b1, b2), nil
+}
+
+func (e *Expression) getUnaryType(unary *parser.Unary) (ExpressionType, error) {
+	if unary.Unary != nil {
+		return e.getUnaryType(unary.Unary)
+	}
+	if unary.Primary != nil {
+		return e.getPrimaryType(unary.Primary)
+	}
+	return ExpressionTypeInvalid, fmt.Errorf("invalid")
+}
+
+func (e *Expression) getPrimaryType(primary *parser.Primary) (ExpressionType, error) {
+	if primary.NumberValue != nil || primary.StringValue != nil || primary.BoolValue != nil {
+		return ExpressionTypeLocal, nil
+	}
+	if primary.Id != nil {
+		return e.getVariableType(primary.Id)
+	}
+	if primary.FuncCall != nil {
+		return e.getFuncCallType(primary.FuncCall)
+	}
+	if primary.ForAll != nil {
+		return e.getForAllType(primary.ForAll)
+	}
+	if primary.SubExpression != nil {
+		expr := NewExpression(primary.SubExpression, e.sensorId, e.constants, e.variables, e.manager)
+		return expr.GetExpressionType()
+	}
+	return ExpressionTypeInvalid, fmt.Errorf("invalid")
+}
+
+func (e *Expression) getVariableType(variable *parser.Variable) (ExpressionType, error) {
+	if variable.Id == nil {
+		return ExpressionTypeInvalid, fmt.Errorf("variable id missing")
+	}
+	vid := StringValue(variable.Id)
+	if variable.Source == nil {
+		// constant
+		_, ok := e.constants[vid]
+		if !ok {
+			if vid == e.sensorId {
+				return ExpressionTypeLocal, nil
+			}
+			return ExpressionTypeRemote, nil
+		}
+		return ExpressionTypeLocal, nil
+	}
+	src := variable.Source
+	// constant
+	_, ok := e.variables[vid]
+	if !ok {
+		return ExpressionTypeInvalid, fmt.Errorf("variable %s is not defined", vid)
+	}
+	if src.Source != nil {
+		// source is from an id (not a variable)
+		vsrc := StringValue(src.Source)
+		if vsrc == e.sensorId {
+			return ExpressionTypeLocal, nil
+		} else {
+			return ExpressionTypeRemote, nil
+		}
+	}
+	if src.VariableId != nil {
+		return ExpressionTypeRemote, nil
+	}
+	return ExpressionTypeInvalid, fmt.Errorf("invalid code sequence")
+}
+
+func (e *Expression) getFuncCallType(funcCall *parser.FuncCall) (ExpressionType, error) {
+	var etype ExpressionType = ExpressionTypeLocal
+	for _, arg := range funcCall.Args {
+		expr := NewExpression(arg, e.sensorId, e.constants, e.variables, e.manager)
+		argType, err := expr.GetExpressionType()
+		if err != nil {
+			return ExpressionTypeInvalid, err
+		}
+		etype = mergeExpressionTypes(etype, argType)
+		if etype == ExpressionTypeInvalid {
+			return ExpressionTypeInvalid, fmt.Errorf("invalid type")
+		}
+		if etype == ExpressionTypeRemote {
+			return ExpressionTypeRemote, nil
+		}
+	}
+	return etype, nil
+}
+
+func (e *Expression) getForAllType(forall *parser.ForAllExpr) (ExpressionType, error) {
+	return ExpressionTypeLocal, nil
+}
+
+func (e *Expression) GenerateCode() error {
+	if e.expr.Assignment == nil {
+		return nil
+	}
+
+	t, err := e.Assignment(e.expr.Assignment)
+	if err != nil {
+		return err
 	}
 
 	e.FinalResult = t
 
-	return e, nil
+	return nil
 }
 
 func (e *Expression) generateBinaryOperationCode(t1, op, t2 string) string {
@@ -246,7 +459,8 @@ func (e *Expression) Primary(primary *parser.Primary) (string, error) {
 		return e.VariableAssignment(primary.Id)
 	}
 	if primary.SubExpression != nil {
-		newExpr, err := NewExpression(primary.SubExpression, e.sensorId, e.constants, e.variables, e.manager)
+		newExpr := NewExpression(primary.SubExpression, e.sensorId, e.constants, e.variables, e.manager)
+		err := newExpr.GenerateCode()
 		if err != nil {
 			return "", err
 		}
@@ -267,11 +481,13 @@ func (e *Expression) ForAll(forall *parser.ForAllExpr) (string, error) {
 	if l1 != l2 {
 		return "", fmt.Errorf("loop variable mismatch: %s %s", l1, l2)
 	}
-	loopOver, err := NewExpression(forall.LoopOver, e.sensorId, e.constants, e.variables, e.manager)
+	loopOver := NewExpression(forall.LoopOver, e.sensorId, e.constants, e.variables, e.manager)
+	err := loopOver.GenerateCode()
 	if err != nil {
 		return "", fmt.Errorf("loop over expression error: %s", err)
 	}
-	loopExpr, err := NewExpression(forall.Expr, e.sensorId, e.constants, e.variables, e.manager)
+	loopExpr := NewExpression(forall.Expr, e.sensorId, e.constants, e.variables, e.manager)
+	err = loopExpr.GenerateCode()
 	if err != nil {
 		return "", fmt.Errorf("loop expression error: %s", err)
 	}
@@ -310,7 +526,8 @@ func (e *Expression) FunctionCall(funcCall *parser.FuncCall) (string, error) {
 	argsTemp := []string{}
 
 	for index, argExpr := range funcCall.Args {
-		expr, err := NewExpression(argExpr, e.sensorId, e.constants, e.variables, e.manager)
+		expr := NewExpression(argExpr, e.sensorId, e.constants, e.variables, e.manager)
+		err := expr.GenerateCode()
 		if err != nil {
 			return "", fmt.Errorf("Argument #%d in function call %s.%s failed",
 				index, StringValue(funcCall.PackageId), StringValue(funcCall.FunctionName))
@@ -321,8 +538,13 @@ func (e *Expression) FunctionCall(funcCall *parser.FuncCall) (string, error) {
 	}
 
 	funcTemp := e.manager.NewTempVariable("unknown")
-	code := fmt.Sprintf("%s := %s.%s(%s)",
-		funcTemp, StringValue(funcCall.PackageId), StringValue(funcCall.FunctionName), strings.Join(argsTemp, ", "))
+	fcall := fmt.Sprintf("%s.%s", StringValue(funcCall.PackageId), StringValue(funcCall.FunctionName))
+	// special handling
+	if StringValue(funcCall.PackageId) == "time" && StringValue(funcCall.FunctionName) == "Now" {
+		fcall = "time.Now().Unix"
+	}
+	code := fmt.Sprintf("%s := %s(%s)",
+		funcTemp, fcall, strings.Join(argsTemp, ", "))
 
 	e.Code = append(e.Code, code)
 	e.Temps = append(e.Temps, funcTemp)
@@ -339,13 +561,27 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 		// constant
 		c, ok := e.constants[vid]
 		if !ok {
-			return "", fmt.Errorf("constant %s is not defined", vid)
+			// vid is an id
+			if vid == e.sensorId {
+				vtemp := e.manager.NewTempVariable(GetProseTypeString(ProseTypeString))
+				code := fmt.Sprintf("%s := this.id", vtemp)
+				e.Code = append(e.Code, code)
+				e.Temps = append(e.Temps, vtemp)
+				return vtemp, nil
+			} else {
+				vtemp := e.manager.NewTempVariable(GetProseTypeString(ProseTypeString))
+				code := fmt.Sprintf("%s := neighbor.id", vtemp)
+				e.Code = append(e.Code, code)
+				e.Temps = append(e.Temps, vtemp)
+				return vtemp, nil
+			}
+		} else {
+			vtemp := e.manager.NewTempVariable(GetProseTypeString(c.ProseType))
+			code := fmt.Sprintf("%s := %s", vtemp, c.Name)
+			e.Code = append(e.Code, code)
+			e.Temps = append(e.Temps, vtemp)
+			return vtemp, nil
 		}
-		vtemp := e.manager.NewTempVariable(GetProseTypeString(c.ProseType))
-		code := fmt.Sprintf("%s := %s", vtemp, c.Name)
-		e.Code = append(e.Code, code)
-		e.Temps = append(e.Temps, vtemp)
-		return vtemp, nil
 	}
 	src := variable.Source
 	// constant
@@ -363,7 +599,11 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 			e.Temps = append(e.Temps, vtemp)
 			return vtemp, nil
 		} else {
-			// TODO
+			vtemp := e.manager.NewTempVariable(GetProseTypeString(v.ProseType))
+			code := fmt.Sprintf("%s := neighbor.state.%s", vtemp, util.ToCamelCase(v.Name))
+			e.Code = append(e.Code, code)
+			e.Temps = append(e.Temps, vtemp)
+			return vtemp, nil
 		}
 	}
 	if src.VariableId != nil {

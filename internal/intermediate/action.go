@@ -30,7 +30,8 @@ func NewAction(act *parser.Action, sensorId string, constants, variables map[str
 	}
 
 	for index, actExpr := range act.Expr {
-		aexpr, err := NewExpression(actExpr, sensorId, constants, variables, manager)
+		aexpr := NewExpression(actExpr, sensorId, constants, variables, manager)
+		err := aexpr.GenerateCode()
 		if err != nil {
 			return nil, fmt.Errorf("invalid expression @ index %d: %s", index, err)
 		}
