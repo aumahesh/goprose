@@ -76,7 +76,7 @@ make all
 bin/prose --p proseFiles/routing.prose --o _examples/
 ```
 
-Generated module is written to `_examples` folder.
+Generated module is written to `_examples` folder. Generated code is available [here](https://github.com/aumahesh/goprose/tree/main/_examples/RoutingTreeMaintenance)
 
 ```
 _examples/RoutingTreeMaintenance
