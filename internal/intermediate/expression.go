@@ -619,7 +619,7 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 				fmt.Sprintf("%s, err := this.getNeighbor(neighbor.state.%s)", vtemp, util.ToCamelCase(vv.Name)),
 				fmt.Sprintf("if err != nil {"),
 				fmt.Sprintf("\tlog.Errorf(\"Error finding neighbor\")"),
-				fmt.Sprintf("\treturn stateChanged"),
+				fmt.Sprintf("\treturn false, neighbor"),
 				fmt.Sprintf("}"),
 			}
 			e.Code = append(e.Code, code...)

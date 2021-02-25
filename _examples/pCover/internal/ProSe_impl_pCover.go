@@ -81,7 +81,7 @@ type ProSe_impl_pCover struct {
 	configuredPriority []int
 	runningPriority []int
 	guards []func() (bool, *NeighborState)
-	actions []func(*NeighborState)
+	actions []func(*NeighborState) (bool, *NeighborState)
 }
 
 func (this *ProSe_impl_pCover) init(id string, mcastAddr string) error {
@@ -91,7 +91,7 @@ func (this *ProSe_impl_pCover) init(id string, mcastAddr string) error {
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
 	this.guards = []func() (bool, *NeighborState){}
-	this.actions = []func(state *NeighborState){}
+	this.actions = []func(state *NeighborState) (bool, *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -379,7 +379,7 @@ func (this *ProSe_impl_pCover) evaluateGuard0() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_pCover) executeAction0(neighbor *NeighborState) {
+func (this *ProSe_impl_pCover) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 0")
 
 	
@@ -387,6 +387,8 @@ func (this *ProSe_impl_pCover) executeAction0(neighbor *NeighborState) {
 	this.state.Timer = int64(0)
 
 	log.Debugf("Action 0 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_pCover) evaluateGuard1() (bool, *NeighborState) {
@@ -413,7 +415,7 @@ func (this *ProSe_impl_pCover) evaluateGuard1() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_pCover) executeAction1(neighbor *NeighborState) {
+func (this *ProSe_impl_pCover) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 1")
 
 	
@@ -421,6 +423,8 @@ func (this *ProSe_impl_pCover) executeAction1(neighbor *NeighborState) {
 	this.state.Timer = int64(0)
 
 	log.Debugf("Action 1 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_pCover) evaluateGuard2() (bool, *NeighborState) {
@@ -447,7 +451,7 @@ func (this *ProSe_impl_pCover) evaluateGuard2() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_pCover) executeAction2(neighbor *NeighborState) {
+func (this *ProSe_impl_pCover) executeAction2(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 2")
 
 	
@@ -456,6 +460,8 @@ func (this *ProSe_impl_pCover) executeAction2(neighbor *NeighborState) {
 	this.state.Timer = temp2
 
 	log.Debugf("Action 2 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_pCover) evaluateGuard3() (bool, *NeighborState) {
@@ -481,7 +487,7 @@ func (this *ProSe_impl_pCover) evaluateGuard3() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_pCover) executeAction3(neighbor *NeighborState) {
+func (this *ProSe_impl_pCover) executeAction3(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 3")
 
 	
@@ -489,6 +495,8 @@ func (this *ProSe_impl_pCover) executeAction3(neighbor *NeighborState) {
 	this.state.Timer = int64(0)
 
 	log.Debugf("Action 3 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_pCover) evaluateGuard4() (bool, *NeighborState) {
@@ -514,7 +522,7 @@ func (this *ProSe_impl_pCover) evaluateGuard4() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_pCover) executeAction4(neighbor *NeighborState) {
+func (this *ProSe_impl_pCover) executeAction4(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 4")
 
 	
@@ -523,6 +531,8 @@ func (this *ProSe_impl_pCover) executeAction4(neighbor *NeighborState) {
 	this.state.Timer = temp3
 
 	log.Debugf("Action 4 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_pCover) evaluateGuard5() (bool, *NeighborState) {
@@ -549,7 +559,7 @@ func (this *ProSe_impl_pCover) evaluateGuard5() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_pCover) executeAction5(neighbor *NeighborState) {
+func (this *ProSe_impl_pCover) executeAction5(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 5")
 
 	
@@ -557,6 +567,8 @@ func (this *ProSe_impl_pCover) executeAction5(neighbor *NeighborState) {
 	this.state.Timer = int64(0)
 
 	log.Debugf("Action 5 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_pCover) evaluateGuard6() (bool, *NeighborState) {
@@ -582,13 +594,15 @@ func (this *ProSe_impl_pCover) evaluateGuard6() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_pCover) executeAction6(neighbor *NeighborState) {
+func (this *ProSe_impl_pCover) executeAction6(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 6")
 
 	
 	this.state.Timer = (this.state.Timer + int64(1))
 
 	log.Debugf("Action 6 executed")
+
+	return true, neighbor
 }
 
 

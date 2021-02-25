@@ -48,7 +48,7 @@ type ProSe_impl_PursuerEvaderTracking struct {
 	configuredPriority []int
 	runningPriority []int
 	guards []func() (bool, *NeighborState)
-	actions []func(*NeighborState)
+	actions []func(*NeighborState) (bool, *NeighborState)
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) init(id string, mcastAddr string) error {
@@ -58,7 +58,7 @@ func (this *ProSe_impl_PursuerEvaderTracking) init(id string, mcastAddr string) 
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
 	this.guards = []func() (bool, *NeighborState){}
-	this.actions = []func(state *NeighborState){}
+	this.actions = []func(state *NeighborState) (bool, *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -264,7 +264,7 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard0() (bool, *NeighborS
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_PursuerEvaderTracking) executeAction0(neighbor *NeighborState) {
+func (this *ProSe_impl_PursuerEvaderTracking) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 0")
 
 	
@@ -272,6 +272,8 @@ func (this *ProSe_impl_PursuerEvaderTracking) executeAction0(neighbor *NeighborS
 	this.state.IsEvaderHere = (temp0 == int64(1))
 
 	log.Debugf("Action 0 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard1() (bool, *NeighborState) {
@@ -297,7 +299,7 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard1() (bool, *NeighborS
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_PursuerEvaderTracking) executeAction1(neighbor *NeighborState) {
+func (this *ProSe_impl_PursuerEvaderTracking) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 1")
 
 	
@@ -307,6 +309,8 @@ func (this *ProSe_impl_PursuerEvaderTracking) executeAction1(neighbor *NeighborS
 	this.state.DetectTimestamp = temp1
 
 	log.Debugf("Action 1 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard2() (bool, *NeighborState) {
@@ -339,19 +343,21 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard2() (bool, *NeighborS
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_PursuerEvaderTracking) executeAction2(neighbor *NeighborState) {
+func (this *ProSe_impl_PursuerEvaderTracking) executeAction2(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 2")
 
 	
 	if neighbor == nil {
 		log.Errorf("invalid neighbor, nil received")
-		return
+		return false, nil
 	}
 	this.state.P = neighbor.id
 	this.state.Dist2Evader = (neighbor.state.Dist2Evader + int64(1))
 	this.state.DetectTimestamp = neighbor.state.DetectTimestamp
 
 	log.Debugf("Action 2 executed")
+
+	return true, neighbor
 }
 
 

@@ -51,7 +51,7 @@ type ProSe_impl_example struct {
 	configuredPriority []int
 	runningPriority []int
 	guards []func() (bool, *NeighborState)
-	actions []func(*NeighborState)
+	actions []func(*NeighborState) (bool, *NeighborState)
 }
 
 func (this *ProSe_impl_example) init(id string, mcastAddr string) error {
@@ -61,7 +61,7 @@ func (this *ProSe_impl_example) init(id string, mcastAddr string) error {
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
 	this.guards = []func() (bool, *NeighborState){}
-	this.actions = []func(state *NeighborState){}
+	this.actions = []func(state *NeighborState) (bool, *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -290,7 +290,7 @@ func (this *ProSe_impl_example) evaluateGuard0() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_example) executeAction0(neighbor *NeighborState) {
+func (this *ProSe_impl_example) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 0")
 
 	
@@ -298,6 +298,8 @@ func (this *ProSe_impl_example) executeAction0(neighbor *NeighborState) {
 	this.state.Timer = int64(10)
 
 	log.Debugf("Action 0 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_example) evaluateGuard1() (bool, *NeighborState) {
@@ -317,7 +319,7 @@ func (this *ProSe_impl_example) evaluateGuard1() (bool, *NeighborState) {
 			temp0, err := this.getNeighbor(neighbor.state.Id)
 			if err != nil {
 				log.Errorf("Error finding neighbor")
-				return stateChanged
+				return false, neighbor
 			}
 			if (temp0.state.St > int64(10)) {
 				found = true
@@ -335,22 +337,24 @@ func (this *ProSe_impl_example) evaluateGuard1() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_example) executeAction1(neighbor *NeighborState) {
+func (this *ProSe_impl_example) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 1")
 
 	
 	if neighbor == nil {
 		log.Errorf("invalid neighbor, nil received")
-		return
+		return false, nil
 	}
 	temp1, err := this.getNeighbor(neighbor.state.Id)
 	if err != nil {
 		log.Errorf("Error finding neighbor")
-		return stateChanged
+		return false, neighbor
 	}
 	this.state.St = temp1.state.St
 
 	log.Debugf("Action 1 executed")
+
+	return true, neighbor
 }
 
 

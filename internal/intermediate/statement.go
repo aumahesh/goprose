@@ -90,7 +90,7 @@ func NewStatement(index int, stmt *parser.Statement, sensorId string, constants,
 		s.ActionCode = append(s.ActionCode, []string{
 			"if neighbor == nil {",
 			"\tlog.Errorf(\"invalid neighbor, nil received\")",
-			"\treturn",
+			"\treturn false, nil",
 			"}",
 		}...)
 	}

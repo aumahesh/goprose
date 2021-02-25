@@ -56,7 +56,7 @@ type {{.ImplementationName}} struct {
 	configuredPriority []int
 	runningPriority []int
 	guards []func() (bool, *NeighborState)
-	actions []func(*NeighborState)
+	actions []func(*NeighborState) (bool, *NeighborState)
 }
 
 func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
@@ -66,7 +66,7 @@ func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
 	this.guards = []func() (bool, *NeighborState){}
-	this.actions = []func(state *NeighborState){}
+	this.actions = []func(state *NeighborState) (bool, *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -287,7 +287,7 @@ func (this *{{$.ImplementationName}}) {{.GuardName}}() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *{{$.ImplementationName}}) {{.ActionName}}(neighbor *NeighborState) {
+func (this *{{$.ImplementationName}}) {{.ActionName}}(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action {{$count}}")
 
 	{{ range .ActionCode }}
@@ -295,6 +295,8 @@ func (this *{{$.ImplementationName}}) {{.ActionName}}(neighbor *NeighborState) {
 	{{- end }}
 
 	log.Debugf("Action {{$count}} executed")
+
+	return true, neighbor
 }
 {{ $count = (increment $count) -}}
 {{end }}

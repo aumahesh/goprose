@@ -48,7 +48,7 @@ type ProSe_impl_distanceVector struct {
 	configuredPriority []int
 	runningPriority []int
 	guards []func() (bool, *NeighborState)
-	actions []func(*NeighborState)
+	actions []func(*NeighborState) (bool, *NeighborState)
 }
 
 func (this *ProSe_impl_distanceVector) init(id string, mcastAddr string) error {
@@ -58,7 +58,7 @@ func (this *ProSe_impl_distanceVector) init(id string, mcastAddr string) error {
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
 	this.guards = []func() (bool, *NeighborState){}
-	this.actions = []func(state *NeighborState){}
+	this.actions = []func(state *NeighborState) (bool, *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -280,17 +280,19 @@ func (this *ProSe_impl_distanceVector) evaluateGuard0() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_distanceVector) executeAction0(neighbor *NeighborState) {
+func (this *ProSe_impl_distanceVector) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 0")
 
 	
 	if neighbor == nil {
 		log.Errorf("invalid neighbor, nil received")
-		return
+		return false, nil
 	}
 	this.state.Dis = (neighbor.state.Dis + int64(1))
 
 	log.Debugf("Action 0 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_distanceVector) evaluateGuard1() (bool, *NeighborState) {
@@ -326,17 +328,19 @@ func (this *ProSe_impl_distanceVector) evaluateGuard1() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_distanceVector) executeAction1(neighbor *NeighborState) {
+func (this *ProSe_impl_distanceVector) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 1")
 
 	
 	if neighbor == nil {
 		log.Errorf("invalid neighbor, nil received")
-		return
+		return false, nil
 	}
 	this.state.Dis = this.state.Diameter
 
 	log.Debugf("Action 1 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_distanceVector) evaluateGuard2() (bool, *NeighborState) {
@@ -363,7 +367,7 @@ func (this *ProSe_impl_distanceVector) evaluateGuard2() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_distanceVector) executeAction2(neighbor *NeighborState) {
+func (this *ProSe_impl_distanceVector) executeAction2(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 2")
 
 	
@@ -371,6 +375,8 @@ func (this *ProSe_impl_distanceVector) executeAction2(neighbor *NeighborState) {
 	this.state.Dis = this.state.Diameter
 
 	log.Debugf("Action 2 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_distanceVector) evaluateGuard3() (bool, *NeighborState) {
@@ -404,18 +410,20 @@ func (this *ProSe_impl_distanceVector) evaluateGuard3() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_distanceVector) executeAction3(neighbor *NeighborState) {
+func (this *ProSe_impl_distanceVector) executeAction3(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 3")
 
 	
 	if neighbor == nil {
 		log.Errorf("invalid neighbor, nil received")
-		return
+		return false, nil
 	}
 	this.state.P = neighbor.id
 	this.state.Dis = (neighbor.state.Dis + int64(1))
 
 	log.Debugf("Action 3 executed")
+
+	return true, neighbor
 }
 
 

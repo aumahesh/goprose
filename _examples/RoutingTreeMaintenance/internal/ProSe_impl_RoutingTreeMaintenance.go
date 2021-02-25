@@ -51,7 +51,7 @@ type ProSe_impl_RoutingTreeMaintenance struct {
 	configuredPriority []int
 	runningPriority []int
 	guards []func() (bool, *NeighborState)
-	actions []func(*NeighborState)
+	actions []func(*NeighborState) (bool, *NeighborState)
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) init(id string, mcastAddr string) error {
@@ -61,7 +61,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) init(id string, mcastAddr string)
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
 	this.guards = []func() (bool, *NeighborState){}
-	this.actions = []func(state *NeighborState){}
+	this.actions = []func(state *NeighborState) (bool, *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -298,18 +298,20 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard0() (bool, *Neighbor
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) executeAction0(neighbor *NeighborState) {
+func (this *ProSe_impl_RoutingTreeMaintenance) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 0")
 
 	
 	if neighbor == nil {
 		log.Errorf("invalid neighbor, nil received")
-		return
+		return false, nil
 	}
 	this.state.P = neighbor.id
 	this.state.Inv = neighbor.state.Inv
 
 	log.Debugf("Action 0 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard1() (bool, *NeighborState) {
@@ -343,18 +345,20 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard1() (bool, *Neighbor
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) executeAction1(neighbor *NeighborState) {
+func (this *ProSe_impl_RoutingTreeMaintenance) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 1")
 
 	
 	if neighbor == nil {
 		log.Errorf("invalid neighbor, nil received")
-		return
+		return false, nil
 	}
 	this.state.P = neighbor.id
 	this.state.Inv = (neighbor.state.Inv + int64(1))
 
 	log.Debugf("Action 1 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard2() (bool, *NeighborState) {
@@ -391,18 +395,20 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard2() (bool, *Neighbor
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) executeAction2(neighbor *NeighborState) {
+func (this *ProSe_impl_RoutingTreeMaintenance) executeAction2(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 2")
 
 	
 	if neighbor == nil {
 		log.Errorf("invalid neighbor, nil received")
-		return
+		return false, nil
 	}
 	this.state.P = ""
 	this.state.Inv = CMAX
 
 	log.Debugf("Action 2 executed")
+
+	return true, neighbor
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard3() (bool, *NeighborState) {
@@ -428,13 +434,15 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard3() (bool, *Neighbor
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) executeAction3(neighbor *NeighborState) {
+func (this *ProSe_impl_RoutingTreeMaintenance) executeAction3(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 3")
 
 	
 	this.state.Inv = CMAX
 
 	log.Debugf("Action 3 executed")
+
+	return true, neighbor
 }
 
 

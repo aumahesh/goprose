@@ -48,7 +48,7 @@ type ProSe_impl_max struct {
 	configuredPriority []int
 	runningPriority []int
 	guards []func() (bool, *NeighborState)
-	actions []func(*NeighborState)
+	actions []func(*NeighborState) (bool, *NeighborState)
 }
 
 func (this *ProSe_impl_max) init(id string, mcastAddr string) error {
@@ -58,7 +58,7 @@ func (this *ProSe_impl_max) init(id string, mcastAddr string) error {
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
 	this.guards = []func() (bool, *NeighborState){}
-	this.actions = []func(state *NeighborState){}
+	this.actions = []func(state *NeighborState) (bool, *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -263,17 +263,19 @@ func (this *ProSe_impl_max) evaluateGuard0() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_max) executeAction0(neighbor *NeighborState) {
+func (this *ProSe_impl_max) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 0")
 
 	
 	if neighbor == nil {
 		log.Errorf("invalid neighbor, nil received")
-		return
+		return false, nil
 	}
 	this.state.X = neighbor.state.X
 
 	log.Debugf("Action 0 executed")
+
+	return true, neighbor
 }
 
 
