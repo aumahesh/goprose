@@ -27,25 +27,27 @@ func mergeExpressionTypes(e1, e2 ExpressionType) ExpressionType {
 }
 
 type Expression struct {
-	expr        *parser.Expr
-	manager     *TempsManager
-	constants   map[string]*Variable
-	variables   map[string]*Variable
-	sensorId    string
-	Code        []string
-	Temps       []string
-	FinalResult string
+	expr          *parser.Expr
+	manager       *TempsManager
+	constants     map[string]*Variable
+	variables     map[string]*Variable
+	variableState map[string]bool
+	sensorId      string
+	Code          []string
+	Temps         []string
+	FinalResult   string
 }
 
-func NewExpression(expr *parser.Expr, sensorId string, constants, variables map[string]*Variable, manager *TempsManager) *Expression {
+func NewExpression(expr *parser.Expr, sensorId string, constants, variables map[string]*Variable, vs map[string]bool, manager *TempsManager) *Expression {
 	e := &Expression{
-		expr:      expr,
-		manager:   manager,
-		constants: constants,
-		variables: variables,
-		sensorId:  sensorId,
-		Code:      []string{},
-		Temps:     []string{},
+		expr:          expr,
+		manager:       manager,
+		constants:     constants,
+		variables:     variables,
+		variableState: vs,
+		sensorId:      sensorId,
+		Code:          []string{},
+		Temps:         []string{},
 	}
 
 	return e
@@ -173,7 +175,7 @@ func (e *Expression) getPrimaryType(primary *parser.Primary) (ExpressionType, er
 		return e.getForAllType(primary.ForAll)
 	}
 	if primary.SubExpression != nil {
-		expr := NewExpression(primary.SubExpression, e.sensorId, e.constants, e.variables, e.manager)
+		expr := NewExpression(primary.SubExpression, e.sensorId, e.constants, e.variables, e.variableState, e.manager)
 		return expr.GetExpressionType()
 	}
 	return ExpressionTypeInvalid, fmt.Errorf("invalid")
@@ -219,7 +221,7 @@ func (e *Expression) getVariableType(variable *parser.Variable) (ExpressionType,
 func (e *Expression) getFuncCallType(funcCall *parser.FuncCall) (ExpressionType, error) {
 	var etype ExpressionType = ExpressionTypeLocal
 	for _, arg := range funcCall.Args {
-		expr := NewExpression(arg, e.sensorId, e.constants, e.variables, e.manager)
+		expr := NewExpression(arg, e.sensorId, e.constants, e.variables, e.variableState, e.manager)
 		argType, err := expr.GetExpressionType()
 		if err != nil {
 			return ExpressionTypeInvalid, err
@@ -444,7 +446,7 @@ func (e *Expression) Primary(primary *parser.Primary) (string, error) {
 		return e.VariableAssignment(primary.Id)
 	}
 	if primary.SubExpression != nil {
-		newExpr := NewExpression(primary.SubExpression, e.sensorId, e.constants, e.variables, e.manager)
+		newExpr := NewExpression(primary.SubExpression, e.sensorId, e.constants, e.variables, e.variableState, e.manager)
 		err := newExpr.GenerateCode()
 		if err != nil {
 			return "", err
@@ -466,12 +468,12 @@ func (e *Expression) ForAll(forall *parser.ForAllExpr) (string, error) {
 	if l1 != l2 {
 		return "", fmt.Errorf("loop variable mismatch: %s %s", l1, l2)
 	}
-	loopOver := NewExpression(forall.LoopOver, e.sensorId, e.constants, e.variables, e.manager)
+	loopOver := NewExpression(forall.LoopOver, e.sensorId, e.constants, e.variables, e.variableState, e.manager)
 	err := loopOver.GenerateCode()
 	if err != nil {
 		return "", fmt.Errorf("loop over expression error: %s", err)
 	}
-	loopExpr := NewExpression(forall.Expr, e.sensorId, e.constants, e.variables, e.manager)
+	loopExpr := NewExpression(forall.Expr, e.sensorId, e.constants, e.variables, e.variableState, e.manager)
 	err = loopExpr.GenerateCode()
 	if err != nil {
 		return "", fmt.Errorf("loop expression error: %s", err)
@@ -512,7 +514,7 @@ func (e *Expression) FunctionCall(funcCall *parser.FuncCall) (string, error) {
 	argsTemp := []string{}
 
 	for index, argExpr := range funcCall.Args {
-		expr := NewExpression(argExpr, e.sensorId, e.constants, e.variables, e.manager)
+		expr := NewExpression(argExpr, e.sensorId, e.constants, e.variables, e.variableState, e.manager)
 		err := expr.GenerateCode()
 		if err != nil {
 			return "", fmt.Errorf("Argument #%d in function call %s.%s failed",
@@ -599,12 +601,16 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 		}
 		vvsrc := StringValue(src.VariableSource)
 		if vvsrc == e.sensorId {
-			code := []string{
-				fmt.Sprintf(`if neighbor.id != this.state.%s {`, util.ToCamelCase(vv.Name)),
-				fmt.Sprintf("\tcontinue"),
-				fmt.Sprintf("}"),
+			checkAdded, alreadyFound := e.variableState[vv.Name]
+			if !alreadyFound || !checkAdded {
+				code := []string{
+					fmt.Sprintf(`if neighbor.id != this.state.%s {`, util.ToCamelCase(vv.Name)),
+					fmt.Sprintf("\tcontinue"),
+					fmt.Sprintf("}"),
+				}
+				e.Code = append(e.Code, code...)
+				e.variableState[vv.Name] = true
 			}
-			e.Code = append(e.Code, code...)
 			return fmt.Sprintf("neighbor.state.%s", util.ToCamelCase(v.Name)), nil
 		} else {
 			// TODO

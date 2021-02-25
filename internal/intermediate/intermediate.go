@@ -153,6 +153,7 @@ func (g *translator) doInitFunction(id string, defaultValue *parser.Expr) (*Expr
 		g.intermediateProgram.SensorName,
 		g.intermediateProgram.Constants,
 		g.intermediateProgram.Variables,
+		map[string]bool{},
 		g.tempsManager)
 	err := initExpr.GenerateCode()
 	if err != nil {

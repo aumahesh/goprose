@@ -275,18 +275,6 @@ func (this *ProSe_impl_RoutingTreeMaintenance) doAction2() bool {
 		if neighbor.id != this.state.P {
 			continue
 		}
-		if neighbor.id != this.state.P {
-			continue
-		}
-		if neighbor.id != this.state.P {
-			continue
-		}
-		if neighbor.id != this.state.P {
-			continue
-		}
-		if neighbor.id != this.state.P {
-			continue
-		}
 		if (this.state.P != "") && ((temp3 == false) || ((neighbor.state.Inv >= CMAX) || (((neighbor.state.Dist < this.state.Dist) && (this.state.Inv != neighbor.state.Inv)) || ((neighbor.state.Dist > this.state.Dist) && (this.state.Inv != (neighbor.state.Inv + int64(1))))))) {
 			found = true
 			break

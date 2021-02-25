@@ -17,7 +17,7 @@ type GuardedStatement struct {
 func NewStatement(stmt *parser.Statement, sensorId string, constants, variables map[string]*Variable, manager *TempsManager) (*GuardedStatement, error) {
 	s := &GuardedStatement{}
 
-	s.Guard = NewExpression(stmt.Guard, sensorId, constants, variables, manager)
+	s.Guard = NewExpression(stmt.Guard, sensorId, constants, variables, map[string]bool{}, manager)
 	etype, err := s.Guard.GetExpressionType()
 	if err != nil {
 		return nil, err
