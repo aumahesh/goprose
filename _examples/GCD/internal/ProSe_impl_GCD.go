@@ -1,4 +1,4 @@
-// +build RoutingTreeMaintenance
+// +build GCD
 
 package internal
 
@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/proto"
 	"github.com/dmichael/go-multicast/multicast"
-	p "aumahesh.com/prose/RoutingTreeMaintenance/models"
+	p "aumahesh.com/prose/GCD/models"
 )
 
 const (
@@ -25,9 +25,6 @@ const (
 )
 
 var (
-	
-	
-	CMAX int64 = 0
 	
 )
 
@@ -41,7 +38,7 @@ type NeighborState struct {
 	active bool
 }
 
-type ProSe_impl_RoutingTreeMaintenance struct {
+type ProSe_impl_GCD struct {
 	id string
 	state *p.State
 	mcastAddr string
@@ -55,7 +52,7 @@ type ProSe_impl_RoutingTreeMaintenance struct {
 	actions []func(*NeighborState) (bool, *NeighborState)
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) init(id string, mcastAddr string) error {
+func (this *ProSe_impl_GCD) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
@@ -75,7 +72,6 @@ func (this *ProSe_impl_RoutingTreeMaintenance) init(id string, mcastAddr string)
 
 	this.neighborState = map[string]*NeighborState{}
 
-	CMAX = this.initConstantCMAX()
 	
 
 	this.initState()
@@ -92,49 +88,31 @@ func (this *ProSe_impl_RoutingTreeMaintenance) init(id string, mcastAddr string)
 	this.guards = append(this.guards, this.evaluateGuard1)
 	this.actions = append(this.actions, this.executeAction1)
 
-	this.configuredPriority = append(this.configuredPriority, 1)
-	this.runningPriority = append(this.runningPriority, 1)
-	this.guards = append(this.guards, this.evaluateGuard2)
-	this.actions = append(this.actions, this.executeAction2)
-
-	this.configuredPriority = append(this.configuredPriority, 1)
-	this.runningPriority = append(this.runningPriority, 1)
-	this.guards = append(this.guards, this.evaluateGuard3)
-	this.actions = append(this.actions, this.executeAction3)
-
 
 	return nil
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) initState() {
-	this.state.Dist = 0
-        this.state.Inv = 0
-        this.state.P = ""
+func (this *ProSe_impl_GCD) initState() {
+	this.state.X = 0
+        this.state.Y = 0
         
 
-	this.state.Dist = this.initVaribleDist()
-	this.state.Inv = this.initVaribleInv()
+	this.state.X = this.initVaribleX()
+	this.state.Y = this.initVaribleY()
 	
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) initConstantCMAX() int64 {
-	
-	return int64(100)
+func (this *ProSe_impl_GCD) initVaribleX() int64 {
+    
+	return int64(3542)
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) initVaribleDist() int64 {
+func (this *ProSe_impl_GCD) initVaribleY() int64 {
     
-	temp0 := rand.Int63n(int64(10))
-    
-	return temp0
+	return int64(943)
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) initVaribleInv() int64 {
-    
-	return int64(0)
-}
-
-func (this *ProSe_impl_RoutingTreeMaintenance) EventHandler(ctx context.Context) {
+func (this *ProSe_impl_GCD) EventHandler(ctx context.Context) {
 	heartbeatTicker := time.NewTicker(heartbeatInterval)
 	updTicker := time.NewTicker(updateLocalStateInterval)
 	for {
@@ -151,9 +129,8 @@ func (this *ProSe_impl_RoutingTreeMaintenance) EventHandler(ctx context.Context)
 			}
 			this.neighborState[s.Id].state = &p.State{
 				
-					Dist: s.State.Dist,
-					Inv: s.State.Inv,
-					P: s.State.P,
+					X: s.State.X,
+					Y: s.State.Y,
 			}
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
@@ -205,7 +182,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) EventHandler(ctx context.Context)
 	}
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) evaluateNeighborStates() {
+func (this *ProSe_impl_GCD) evaluateNeighborStates() {
 	for id, nbr := range this.neighborState {
 		if nbr.updatedAt.Add(inactivityTimeout).Before(time.Now()) {
 			nbr.active = false
@@ -222,7 +199,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateNeighborStates() {
 	}
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) isNeighborUp(id string) bool {
+func (this *ProSe_impl_GCD) isNeighborUp(id string) bool {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return false
@@ -230,11 +207,11 @@ func (this *ProSe_impl_RoutingTreeMaintenance) isNeighborUp(id string) bool {
 	return nbr.active
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) neighbors() map[string]*NeighborState {
+func (this *ProSe_impl_GCD) neighbors() map[string]*NeighborState {
 	return this.neighborState
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) setNeighbor(id string, state bool) bool {
+func (this *ProSe_impl_GCD) setNeighbor(id string, state bool) bool {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return false
@@ -243,7 +220,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) setNeighbor(id string, state bool
 	return nbr.active
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) getNeighbor(id string) (*NeighborState, error) {
+func (this *ProSe_impl_GCD) getNeighbor(id string) (*NeighborState, error) {
 	if id == this.id {
 		return &NeighborState{
 					id: this.id,
@@ -262,16 +239,16 @@ func (this *ProSe_impl_RoutingTreeMaintenance) getNeighbor(id string) (*Neighbor
 	return nbr, nil
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) decrementPriority(actionIndex int) {
+func (this *ProSe_impl_GCD) decrementPriority(actionIndex int) {
 	p := this.runningPriority[actionIndex]
 	this.runningPriority[actionIndex] = p-1
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) resetPriority(actionIndex int) {
+func (this *ProSe_impl_GCD) resetPriority(actionIndex int) {
 	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) okayToRun(actionIndex int) bool {
+func (this *ProSe_impl_GCD) okayToRun(actionIndex int) bool {
 	if this.runningPriority[actionIndex] == 0 {
 		return true
 	}
@@ -279,7 +256,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) okayToRun(actionIndex int) bool {
 }
 
 
-func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard0() (bool, *NeighborState) {
+func (this *ProSe_impl_GCD) evaluateGuard0() (bool, *NeighborState) {
 	var takeAction bool
 	var neighbor *NeighborState
 
@@ -291,12 +268,8 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard0() (bool, *Neighbor
 		log.Debugf("Evaluating Guard 0")
 
 		
-		for _, neighbor = range this.neighborState {
-			temp1 := this.isNeighborUp(neighbor.id)
-			if ((neighbor.state.Dist < this.state.Dist) && (temp1 && ((neighbor.state.Inv < CMAX) && (neighbor.state.Inv < this.state.Inv)))) {
-				takeAction = true
-				break
-			}
+		if (this.state.X > this.state.Y) {
+			takeAction = true
 		}
 
 		log.Debugf("Guard 0 evaluated to %v", takeAction)
@@ -306,23 +279,18 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard0() (bool, *Neighbor
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
+func (this *ProSe_impl_GCD) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 0")
 
 	
-	if neighbor == nil {
-		log.Errorf("invalid neighbor, nil received")
-		return false, nil
-	}
-	this.state.P = neighbor.id
-	this.state.Inv = neighbor.state.Inv
+	this.state.X = (this.state.X - this.state.Y)
 
 	log.Debugf("Action 0 executed")
 
 	return true, neighbor
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard1() (bool, *NeighborState) {
+func (this *ProSe_impl_GCD) evaluateGuard1() (bool, *NeighborState) {
 	var takeAction bool
 	var neighbor *NeighborState
 
@@ -334,12 +302,8 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard1() (bool, *Neighbor
 		log.Debugf("Evaluating Guard 1")
 
 		
-		for _, neighbor = range this.neighborState {
-			temp2 := this.isNeighborUp(neighbor.id)
-			if ((neighbor.state.Dist < this.state.Dist) && (temp2 && (((neighbor.state.Inv + int64(1)) < CMAX) && ((neighbor.state.Inv + int64(1)) < this.state.Inv)))) {
-				takeAction = true
-				break
-			}
+		if (this.state.Y > this.state.X) {
+			takeAction = true
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)
@@ -349,104 +313,19 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard1() (bool, *Neighbor
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
+func (this *ProSe_impl_GCD) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
 	log.Debugf("Executing Action 1")
 
 	
-	if neighbor == nil {
-		log.Errorf("invalid neighbor, nil received")
-		return false, nil
-	}
-	this.state.P = neighbor.id
-	this.state.Inv = (neighbor.state.Inv + int64(1))
+	this.state.Y = (this.state.Y - this.state.X)
 
 	log.Debugf("Action 1 executed")
 
 	return true, neighbor
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard2() (bool, *NeighborState) {
-	var takeAction bool
-	var neighbor *NeighborState
 
-	takeAction = false
-	neighbor = nil
-
-	this.decrementPriority(2)
-	if this.okayToRun(2) {
-		log.Debugf("Evaluating Guard 2")
-
-		
-		for _, neighbor = range this.neighborState {
-			temp3 := this.isNeighborUp(this.state.P)
-			if neighbor.id != this.state.P {
-				continue
-			}
-			if ((this.state.P != "") && ((temp3 == false) || ((neighbor.state.Inv >= CMAX) || (((neighbor.state.Dist < this.state.Dist) && (this.state.Inv != neighbor.state.Inv)) || ((neighbor.state.Dist > this.state.Dist) && (this.state.Inv != (neighbor.state.Inv + int64(1)))))))) {
-				takeAction = true
-				break
-			}
-		}
-
-		log.Debugf("Guard 2 evaluated to %v", takeAction)
-		this.resetPriority(2)
-	}
-
-	return takeAction, neighbor
-}
-
-func (this *ProSe_impl_RoutingTreeMaintenance) executeAction2(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 2")
-
-	
-	if neighbor == nil {
-		log.Errorf("invalid neighbor, nil received")
-		return false, nil
-	}
-	this.state.P = ""
-	this.state.Inv = CMAX
-
-	log.Debugf("Action 2 executed")
-
-	return true, neighbor
-}
-
-func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard3() (bool, *NeighborState) {
-	var takeAction bool
-	var neighbor *NeighborState
-
-	takeAction = false
-	neighbor = nil
-
-	this.decrementPriority(3)
-	if this.okayToRun(3) {
-		log.Debugf("Evaluating Guard 3")
-
-		
-		if ((this.state.P == "") && (this.state.Inv < CMAX)) {
-			takeAction = true
-		}
-
-		log.Debugf("Guard 3 evaluated to %v", takeAction)
-		this.resetPriority(3)
-	}
-
-	return takeAction, neighbor
-}
-
-func (this *ProSe_impl_RoutingTreeMaintenance) executeAction3(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 3")
-
-	
-	this.state.Inv = CMAX
-
-	log.Debugf("Action 3 executed")
-
-	return true, neighbor
-}
-
-
-func (this *ProSe_impl_RoutingTreeMaintenance) updateLocalState() bool {
+func (this *ProSe_impl_GCD) updateLocalState() bool {
 	stateChanged := false
 
 	couldExecute := []int{}
@@ -470,14 +349,13 @@ func (this *ProSe_impl_RoutingTreeMaintenance) updateLocalState() bool {
 	return stateChanged
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) broadcastLocalState() (int, error) {
+func (this *ProSe_impl_GCD) broadcastLocalState() (int, error) {
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
 			
-                Dist: this.state.Dist,
-                Inv: this.state.Inv,
-                P: this.state.P,
+                X: this.state.X,
+                Y: this.state.Y,
 		},
 	}
 	broadcastMessage := &p.BroadcastMessage{
@@ -489,7 +367,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) broadcastLocalState() (int, error
 	return this.send(broadcastMessage)
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) sendHeartBeat() (int, error) {
+func (this *ProSe_impl_GCD) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
 		Id: this.id,
 		SentAt: time.Now().Unix(),
@@ -503,7 +381,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) sendHeartBeat() (int, error) {
 	return this.send(broadcastMessage)
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) send(msg *p.BroadcastMessage) (int, error) {
+func (this *ProSe_impl_GCD) send(msg *p.BroadcastMessage) (int, error) {
 	log.Debugf("Sending: %+v", msg)
 	data, err := proto.Marshal(msg)
 	if err != nil {
@@ -512,7 +390,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) send(msg *p.BroadcastMessage) (in
 	return this.mcastConn.Write(data)
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) msgHandler(src *net.UDPAddr, n int, b []byte) {
+func (this *ProSe_impl_GCD) msgHandler(src *net.UDPAddr, n int, b []byte) {
 	log.Debugf("received message (%d bytes) from %s", n, src.String())
 	broadcastMessage := &p.BroadcastMessage{}
 	err := proto.Unmarshal(b[:n], broadcastMessage)
@@ -534,7 +412,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) msgHandler(src *net.UDPAddr, n in
 	}
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) Listener(ctx context.Context) {
+func (this *ProSe_impl_GCD) Listener(ctx context.Context) {
 	addr, err := net.ResolveUDPAddr("udp4", this.mcastAddr)
 	if err != nil {
 		log.Errorf("Error resolving mcast address: %s", err)

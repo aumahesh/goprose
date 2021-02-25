@@ -20,6 +20,7 @@ import (
 const (
 	inactivityTimeout = time.Duration(2) * time.Minute
 	heartbeatInterval = time.Duration(1) * time.Minute
+	updateLocalStateInterval = time.Duration(10) * time.Second
 	maxDatagramSize = 1024
 )
 
@@ -78,17 +79,7 @@ func (this *ProSe_impl_DistributedReset) init(id string, mcastAddr string) error
 	this.receiveChannel = make(chan *p.NeighborUpdate, 10)
 	this.hbChannel = make(chan *p.NeighborHeartBeat, 10)
 
-	this.neighborState = map[string]*NeighborState{
-		this.id: &NeighborState{
-					id: this.id,
-					state: this.state,
-					discoveredAt: time.Now(),
-					updatedAt: time.Now(),
-					lastHeartBeatAt: time.Now(),
-					stateChangedAt: time.Now(),
-					active: true,
-				},
-	}
+	this.neighborState = map[string]*NeighborState{}
 
 	initiate = this.initConstantinitiate()
 	normal = this.initConstantnormal()
@@ -167,6 +158,7 @@ func (this *ProSe_impl_DistributedReset) initVaribleSt() int64 {
 
 func (this *ProSe_impl_DistributedReset) EventHandler(ctx context.Context) {
 	heartbeatTicker := time.NewTicker(heartbeatInterval)
+	updTicker := time.NewTicker(updateLocalStateInterval)
 	for {
 		select {
 		case s := <-this.receiveChannel:
@@ -220,6 +212,15 @@ func (this *ProSe_impl_DistributedReset) EventHandler(ctx context.Context) {
 			}
 		case <-heartbeatTicker.C:
 			this.sendHeartBeat()
+		case <-updTicker.C:
+			if stateChanged := this.updateLocalState(); stateChanged {
+				n, err := this.broadcastLocalState()
+				if err != nil {
+					log.Errorf("Error broadcasting local state to neighbors")
+				} else {
+					log.Debugf("%s: sent heartbeat: %d bytes", this.id, n)
+				}
+			}
 		case <-ctx.Done():
 			return
 		}
@@ -265,6 +266,17 @@ func (this *ProSe_impl_DistributedReset) setNeighbor(id string, state bool) bool
 }
 
 func (this *ProSe_impl_DistributedReset) getNeighbor(id string) (*NeighborState, error) {
+	if id == this.id {
+		return &NeighborState{
+					id: this.id,
+					state: this.state,
+					discoveredAt: time.Now(),
+					updatedAt: time.Now(),
+					lastHeartBeatAt: time.Now(),
+					stateChangedAt: time.Now(),
+					active: true,
+				}, nil
+	}
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return nil, fmt.Errorf("%s not found in neighbors", id)
@@ -526,6 +538,9 @@ func (this *ProSe_impl_DistributedReset) msgHandler(src *net.UDPAddr, n int, b [
 	err := proto.Unmarshal(b[:n], broadcastMessage)
 	if err != nil {
 		log.Errorf("error unmarshalling proto from src %s: %s", src.String(), err)
+		return
+	}
+	if broadcastMessage.Src == this.id {
 		return
 	}
 	log.Debugf("received: %+v", broadcastMessage)

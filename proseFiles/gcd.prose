@@ -1,0 +1,17 @@
+program GCD
+
+sensor j
+
+var
+
+	public int X.j, Y.j = 3542,943;
+
+begin
+
+	X.j > Y.j -> X.j = X.j - Y.j;
+
+	|
+
+	Y.j > X.j -> Y.j = Y.j - X.j;
+
+end

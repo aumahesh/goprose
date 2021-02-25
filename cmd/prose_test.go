@@ -11,6 +11,7 @@ func TestCompileAndGenerateCode(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
 	proseFiles := []string{
+		"gcd.prose",
 		"example.prose",
 		"max.prose",
 		"tree_coloring.prose",
