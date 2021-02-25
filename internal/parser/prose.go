@@ -43,8 +43,8 @@ expr			::= intconst
 				 |  function_call
 				 |  forall
 				 |  "(" expr ")"
-function_call	::= ident "." ident "(" arg_list ")"
-arg_list		::= /empty/ | var_list
+function_call		::= ident "." ident "(" arg_list ")"
+arg_list		::= /empty/ | expr_list
 forall			::= "forall" ident ":" ident "in" expr ":" expr
 unop			::= "!" | "-"
 binop			::= "+" | "-" | "*" | "/" | "%"
