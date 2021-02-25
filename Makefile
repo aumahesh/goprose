@@ -13,7 +13,7 @@ all: fmt build
 
 test:
 	echo "running tests"
-	go test  github.com/aumahesh/goprose/...
+	go test --cover github.com/aumahesh/goprose/...
 
 test: fmt test
 
