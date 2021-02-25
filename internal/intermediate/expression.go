@@ -601,7 +601,7 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 		}
 		vvsrc := StringValue(src.VariableSource)
 		if vvsrc == e.sensorId {
-			vsName := fmt.Sprintf("%s.%s", vv.Name, vvsrc)
+			vsName := fmt.Sprintf("%s", vv.Name)
 			checkAdded, alreadyFound := e.variableState[vsName]
 			if !alreadyFound || !checkAdded {
 				code := []string{

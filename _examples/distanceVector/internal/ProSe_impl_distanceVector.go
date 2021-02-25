@@ -255,18 +255,12 @@ func (this *ProSe_impl_distanceVector) doAction0() bool {
 			if neighbor.id != this.state.P {
 				continue
 			}
-			if neighbor.id != this.state.P {
-				continue
-			}
 			if ((this.state.P != "") && (temp0 && ((this.state.Dis != (neighbor.state.Dis + int64(1))) && (this.state.Diameter > (neighbor.state.Dis + int64(1)))))) {
 				found = true
 				break
 			}
 		}
 		if found {
-			if neighbor.id != this.state.P {
-				continue
-			}
 			this.state.Dis = (neighbor.state.Dis + int64(1))
 			stateChanged = true
 		}
@@ -291,9 +285,6 @@ func (this *ProSe_impl_distanceVector) doAction1() bool {
 		var found bool
 		var neighbor *NeighborState
 		for _, neighbor = range this.neighborState {
-			if neighbor.id != this.state.P {
-				continue
-			}
 			if neighbor.id != this.state.P {
 				continue
 			}
