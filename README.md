@@ -1,6 +1,8 @@
 # goprose
 ProSe compiler in golang (generates golang code)
 
+[![Go](https://github.com/aumahesh/goprose/actions/workflows/go.yml/badge.svg)](https://github.com/aumahesh/goprose/actions/workflows/go.yml)
+
 ## ProSe: Overview
 
 ProSe is a programming tool that allows the designers to concisely specify
