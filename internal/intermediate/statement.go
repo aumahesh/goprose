@@ -9,15 +9,20 @@ import (
 )
 
 type GuardedStatement struct {
-	Priority int64
-	Guard    *Expression
-	Action   []*Action
-	Code     []string
+	Priority   int64
+	GuardName  string
+	ActionName string
+	Guard      *Expression
+	Action     []*Action
+	GuardCode  []string
+	ActionCode []string
 }
 
-func NewStatement(stmt *parser.Statement, sensorId string, constants, variables map[string]*Variable, manager *TempsManager) (*GuardedStatement, error) {
+func NewStatement(index int, stmt *parser.Statement, sensorId string, constants, variables map[string]*Variable, manager *TempsManager) (*GuardedStatement, error) {
 	s := &GuardedStatement{
-		Priority: 1,
+		Priority:   1,
+		GuardName:  fmt.Sprintf("evaluateGuard%d", index),
+		ActionName: fmt.Sprintf("executeAction%d", index),
 	}
 
 	if stmt.Priority != nil {
@@ -34,9 +39,8 @@ func NewStatement(stmt *parser.Statement, sensorId string, constants, variables 
 	}
 
 	if etype == ExpressionTypeRemote {
-		s.Code = []string{
+		s.GuardCode = []string{
 			"var found bool",
-			"var neighbor *NeighborState",
 			"for _, neighbor = range this.neighborState {",
 		}
 	}
@@ -68,19 +72,31 @@ func NewStatement(stmt *parser.Statement, sensorId string, constants, variables 
 			fmt.Sprintf("\t}"),
 			"}",
 			"if found {",
+			"\ttakeAction = true",
+			"}",
 		}...)
 	} else {
 		codelines = s.Guard.Code
-		codelines = append(codelines, fmt.Sprintf("if %s {", s.Guard.FinalResult))
+		codelines = append(codelines, []string{
+			fmt.Sprintf("if %s {", s.Guard.FinalResult),
+			"\ttakeAction = true",
+			"}",
+		}...)
 	}
-	s.Code = append(s.Code, codelines...)
+	s.GuardCode = append(s.GuardCode, codelines...)
+
+	s.ActionCode = []string{}
+	if etype == ExpressionTypeRemote {
+		s.ActionCode = append(s.ActionCode, []string{
+			"if neighbor == nil {",
+			"\tlog.Errorf(\"invalid neighbor, nil received\")",
+			"\treturn",
+			"}",
+		}...)
+	}
 	for _, act := range s.Action {
-		for _, c := range act.Code {
-			s.Code = append(s.Code, fmt.Sprintf("\t%s", c))
-		}
+		s.ActionCode = append(s.ActionCode, act.Code...)
 	}
-	s.Code = append(s.Code, fmt.Sprintf("\tstateChanged = true"))
-	s.Code = append(s.Code, "}")
 
 	return s, nil
 }

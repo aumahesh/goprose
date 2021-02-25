@@ -2,7 +2,6 @@ package intermediate
 
 import (
 	"fmt"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -31,6 +30,7 @@ func (g *translator) do() error {
 	g.intermediateProgram.Variables = map[string]*Variable{}
 	g.intermediateProgram.ConstantInitFunctions = map[string]*Expression{}
 	g.intermediateProgram.VariableInitFunctions = map[string]*Expression{}
+	g.intermediateProgram.Statements = []*GuardedStatement{}
 
 	translatorFuncs := []func() error{
 		g.doImportDeclarations,
@@ -168,17 +168,12 @@ func (g *translator) doGuardedStatements() error {
 
 	sensorName := g.intermediateProgram.SensorName
 
-	g.intermediateProgram.Statements = map[string]*GuardedStatement{}
-
 	for index, stmt := range g.parsedProgram.Statements {
-		statementFunc := fmt.Sprintf("doAction%d", index)
-		s, err := NewStatement(stmt, sensorName, g.intermediateProgram.Constants, g.intermediateProgram.Variables, g.tempsManager)
+		s, err := NewStatement(index, stmt, sensorName, g.intermediateProgram.Constants, g.intermediateProgram.Variables, g.tempsManager)
 		if err != nil {
 			return fmt.Errorf("Error: statement %s errored: %s", stmt.Pos, err)
 		}
-		g.intermediateProgram.Statements[statementFunc] = s
-
-		log.Debugf("%s", strings.Join(s.Code, "\n"))
+		g.intermediateProgram.Statements = append(g.intermediateProgram.Statements, s)
 	}
 	return nil
 }

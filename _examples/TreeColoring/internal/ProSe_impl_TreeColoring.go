@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 	"fmt"
+	"math/rand"
 
 
 
@@ -52,7 +53,8 @@ type ProSe_impl_TreeColoring struct {
 	neighborState map[string]*NeighborState
 	configuredPriority []int
 	runningPriority []int
-	guardedStatements []func() bool
+	guards []func() (bool, *NeighborState)
+	actions []func(*NeighborState)
 }
 
 func (this *ProSe_impl_TreeColoring) init(id string, mcastAddr string) error {
@@ -61,7 +63,8 @@ func (this *ProSe_impl_TreeColoring) init(id string, mcastAddr string) error {
 	this.mcastAddr = mcastAddr
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
-	this.guardedStatements = []func() bool{}
+	this.guards = []func() (bool, *NeighborState){}
+	this.actions = []func(state *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -94,23 +97,28 @@ func (this *ProSe_impl_TreeColoring) init(id string, mcastAddr string) error {
 
 	this.configuredPriority = append(this.configuredPriority, 1)
 	this.runningPriority = append(this.runningPriority, 1)
-	this.guardedStatements = append(this.guardedStatements, this.doAction0)
+	this.guards = append(this.guards, this.evaluateGuard0)
+	this.actions = append(this.actions, this.executeAction0)
 
 	this.configuredPriority = append(this.configuredPriority, 1)
 	this.runningPriority = append(this.runningPriority, 1)
-	this.guardedStatements = append(this.guardedStatements, this.doAction1)
+	this.guards = append(this.guards, this.evaluateGuard1)
+	this.actions = append(this.actions, this.executeAction1)
 
 	this.configuredPriority = append(this.configuredPriority, 1)
 	this.runningPriority = append(this.runningPriority, 1)
-	this.guardedStatements = append(this.guardedStatements, this.doAction2)
+	this.guards = append(this.guards, this.evaluateGuard2)
+	this.actions = append(this.actions, this.executeAction2)
 
 	this.configuredPriority = append(this.configuredPriority, 1)
 	this.runningPriority = append(this.runningPriority, 1)
-	this.guardedStatements = append(this.guardedStatements, this.doAction3)
+	this.guards = append(this.guards, this.evaluateGuard3)
+	this.actions = append(this.actions, this.executeAction3)
 
 	this.configuredPriority = append(this.configuredPriority, 1)
 	this.runningPriority = append(this.runningPriority, 1)
-	this.guardedStatements = append(this.guardedStatements, this.doAction4)
+	this.guards = append(this.guards, this.evaluateGuard4)
+	this.actions = append(this.actions, this.executeAction4)
 
 
 	return nil
@@ -279,17 +287,19 @@ func (this *ProSe_impl_TreeColoring) okayToRun(actionIndex int) bool {
 }
 
 
-func (this *ProSe_impl_TreeColoring) doAction0() bool {
-	stateChanged := false
+func (this *ProSe_impl_TreeColoring) evaluateGuard0() (bool, *NeighborState) {
+	var takeAction bool
+	var neighbor *NeighborState
+
+	takeAction = false
+	neighbor = nil
 
 	this.decrementPriority(0)
 	if this.okayToRun(0) {
-
-		log.Debugf("Executing: doAction0")
+		log.Debugf("Evaluating Guard 0")
 
 		
 		var found bool
-		var neighbor *NeighborState
 		for _, neighbor = range this.neighborState {
 			temp0 := this.isNeighborUp(this.state.P)
 			if neighbor.id != this.state.P {
@@ -301,25 +311,39 @@ func (this *ProSe_impl_TreeColoring) doAction0() bool {
 			}
 		}
 		if found {
-			this.state.Color = red
-			stateChanged = true
+			takeAction = true
 		}
 
-		log.Debugf("doAction0: state changed: %v", stateChanged)
-
+		log.Debugf("Guard 0 evaluated to %v", takeAction)
 		this.resetPriority(0)
 	}
 
-	return stateChanged
+	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_TreeColoring) doAction1() bool {
-	stateChanged := false
+func (this *ProSe_impl_TreeColoring) executeAction0(neighbor *NeighborState) {
+	log.Debugf("Executing Action 0")
+
+	
+	if neighbor == nil {
+		log.Errorf("invalid neighbor, nil received")
+		return
+	}
+	this.state.Color = red
+
+	log.Debugf("Action 0 executed")
+}
+
+func (this *ProSe_impl_TreeColoring) evaluateGuard1() (bool, *NeighborState) {
+	var takeAction bool
+	var neighbor *NeighborState
+
+	takeAction = false
+	neighbor = nil
 
 	this.decrementPriority(1)
 	if this.okayToRun(1) {
-
-		log.Debugf("Executing: doAction1")
+		log.Debugf("Evaluating Guard 1")
 
 		
 		temp1 := this.neighbors()
@@ -331,31 +355,40 @@ func (this *ProSe_impl_TreeColoring) doAction1() bool {
 			}
 		}
 		if ((this.state.Color == red) && temp2) {
-			this.state.Color = green
-			this.state.P = this.id
-			this.state.Root = this.id
-			stateChanged = true
+			takeAction = true
 		}
 
-		log.Debugf("doAction1: state changed: %v", stateChanged)
-
+		log.Debugf("Guard 1 evaluated to %v", takeAction)
 		this.resetPriority(1)
 	}
 
-	return stateChanged
+	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_TreeColoring) doAction2() bool {
-	stateChanged := false
+func (this *ProSe_impl_TreeColoring) executeAction1(neighbor *NeighborState) {
+	log.Debugf("Executing Action 1")
+
+	
+	this.state.Color = green
+	this.state.P = this.id
+	this.state.Root = this.id
+
+	log.Debugf("Action 1 executed")
+}
+
+func (this *ProSe_impl_TreeColoring) evaluateGuard2() (bool, *NeighborState) {
+	var takeAction bool
+	var neighbor *NeighborState
+
+	takeAction = false
+	neighbor = nil
 
 	this.decrementPriority(2)
 	if this.okayToRun(2) {
-
-		log.Debugf("Executing: doAction2")
+		log.Debugf("Evaluating Guard 2")
 
 		
 		var found bool
-		var neighbor *NeighborState
 		for _, neighbor = range this.neighborState {
 			if ((this.state.Root < neighbor.state.Root) && ((this.state.Color == green) && (neighbor.state.Color == green))) {
 				found = true
@@ -363,77 +396,120 @@ func (this *ProSe_impl_TreeColoring) doAction2() bool {
 			}
 		}
 		if found {
-			this.state.P = neighbor.id
-			this.state.Root = neighbor.state.Root
-			stateChanged = true
+			takeAction = true
 		}
 
-		log.Debugf("doAction2: state changed: %v", stateChanged)
-
+		log.Debugf("Guard 2 evaluated to %v", takeAction)
 		this.resetPriority(2)
 	}
 
-	return stateChanged
+	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_TreeColoring) doAction3() bool {
-	stateChanged := false
+func (this *ProSe_impl_TreeColoring) executeAction2(neighbor *NeighborState) {
+	log.Debugf("Executing Action 2")
+
+	
+	if neighbor == nil {
+		log.Errorf("invalid neighbor, nil received")
+		return
+	}
+	this.state.P = neighbor.id
+	this.state.Root = neighbor.state.Root
+
+	log.Debugf("Action 2 executed")
+}
+
+func (this *ProSe_impl_TreeColoring) evaluateGuard3() (bool, *NeighborState) {
+	var takeAction bool
+	var neighbor *NeighborState
+
+	takeAction = false
+	neighbor = nil
 
 	this.decrementPriority(3)
 	if this.okayToRun(3) {
-
-		log.Debugf("Executing: doAction3")
+		log.Debugf("Evaluating Guard 3")
 
 		
 		temp3 := this.isNeighborUp(this.id)
 		if temp3 {
-			temp4 := this.setNeighbor(this.id, false)
-			this.state.Tmp = temp4
-			stateChanged = true
+			takeAction = true
 		}
 
-		log.Debugf("doAction3: state changed: %v", stateChanged)
-
+		log.Debugf("Guard 3 evaluated to %v", takeAction)
 		this.resetPriority(3)
 	}
 
-	return stateChanged
+	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_TreeColoring) doAction4() bool {
-	stateChanged := false
+func (this *ProSe_impl_TreeColoring) executeAction3(neighbor *NeighborState) {
+	log.Debugf("Executing Action 3")
+
+	
+	temp4 := this.setNeighbor(this.id, false)
+	this.state.Tmp = temp4
+
+	log.Debugf("Action 3 executed")
+}
+
+func (this *ProSe_impl_TreeColoring) evaluateGuard4() (bool, *NeighborState) {
+	var takeAction bool
+	var neighbor *NeighborState
+
+	takeAction = false
+	neighbor = nil
 
 	this.decrementPriority(4)
 	if this.okayToRun(4) {
-
-		log.Debugf("Executing: doAction4")
+		log.Debugf("Evaluating Guard 4")
 
 		
 		temp5 := this.isNeighborUp(this.id)
 		if (temp5 == false) {
-			temp6 := this.setNeighbor(this.id, true)
-			this.state.Tmp = temp6
-			this.state.P = this.id
-			this.state.Color = red
-			stateChanged = true
+			takeAction = true
 		}
 
-		log.Debugf("doAction4: state changed: %v", stateChanged)
-
+		log.Debugf("Guard 4 evaluated to %v", takeAction)
 		this.resetPriority(4)
 	}
 
-	return stateChanged
+	return takeAction, neighbor
+}
+
+func (this *ProSe_impl_TreeColoring) executeAction4(neighbor *NeighborState) {
+	log.Debugf("Executing Action 4")
+
+	
+	temp6 := this.setNeighbor(this.id, true)
+	this.state.Tmp = temp6
+	this.state.P = this.id
+	this.state.Color = red
+
+	log.Debugf("Action 4 executed")
 }
 
 
 func (this *ProSe_impl_TreeColoring) updateLocalState() bool {
 	stateChanged := false
 
-	for _, stmtFunc := range this.guardedStatements {
-		if changed := stmtFunc(); changed {
-			stateChanged = true
+	couldExecute := []int{}
+	returnNeighbors := []*NeighborState{}
+
+	// Find all guards that light up
+	for index, stmtFunc := range this.guards {
+		if okayToExecute, nbr := stmtFunc(); okayToExecute {
+			couldExecute = append(couldExecute, index)
+			returnNeighbors = append(returnNeighbors, nbr)
 		}
+	}
+
+	// of all the guards that lighted out, pick a random guard and execute its action
+	if len(couldExecute) > 0 {
+		actionIndex := rand.Intn(len(couldExecute))
+		this.actions[couldExecute[actionIndex]](returnNeighbors[actionIndex])
+		stateChanged = true
 	}
 
 	return stateChanged

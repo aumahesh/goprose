@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 	"fmt"
+	"math/rand"
 
 {{ range $Name, $Import := .Imports }}
 	"{{$Import.ImportPath}}"
@@ -54,7 +55,8 @@ type {{.ImplementationName}} struct {
 	neighborState map[string]*NeighborState
 	configuredPriority []int
 	runningPriority []int
-	guardedStatements []func() bool
+	guards []func() (bool, *NeighborState)
+	actions []func(*NeighborState)
 }
 
 func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
@@ -63,7 +65,8 @@ func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 	this.mcastAddr = mcastAddr
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
-	this.guardedStatements = []func() bool{}
+	this.guards = []func() (bool, *NeighborState){}
+	this.actions = []func(state *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -93,10 +96,11 @@ func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 	this.initState()
 
 	// set priorities for actions
-{{ range $Name, $Stmt := .Statements }}
-	this.configuredPriority = append(this.configuredPriority, {{$Stmt.Priority}})
-	this.runningPriority = append(this.runningPriority, {{$Stmt.Priority}})
-	this.guardedStatements = append(this.guardedStatements, this.{{$Name}})
+{{ range .Statements }}
+	this.configuredPriority = append(this.configuredPriority, {{.Priority}})
+	this.runningPriority = append(this.runningPriority, {{.Priority}})
+	this.guards = append(this.guards, this.{{.GuardName}})
+	this.actions = append(this.actions, this.{{.ActionName}})
 {{ end }}
 
 	return nil
@@ -260,25 +264,37 @@ func (this *{{$.ImplementationName}}) okayToRun(actionIndex int) bool {
 }
 
 {{$count := 0 -}}
-{{ range $Name, $Stmt := .Statements }}
-func (this *{{$.ImplementationName}}) {{$Name}}() bool {
-	stateChanged := false
+{{ range .Statements }}
+func (this *{{$.ImplementationName}}) {{.GuardName}}() (bool, *NeighborState) {
+	var takeAction bool
+	var neighbor *NeighborState
+
+	takeAction = false
+	neighbor = nil
 
 	this.decrementPriority({{$count}})
 	if this.okayToRun({{$count}}) {
+		log.Debugf("Evaluating Guard {{$count}}")
 
-		log.Debugf("Executing: {{$Name}}")
-
-		{{ range .Code }}
+		{{ range .GuardCode }}
 		{{.}}
 		{{- end }}
 
-		log.Debugf("{{$Name}}: state changed: %v", stateChanged)
-
+		log.Debugf("Guard {{$count}} evaluated to %v", takeAction)
 		this.resetPriority({{$count}})
 	}
 
-	return stateChanged
+	return takeAction, neighbor
+}
+
+func (this *{{$.ImplementationName}}) {{.ActionName}}(neighbor *NeighborState) {
+	log.Debugf("Executing Action {{$count}}")
+
+	{{ range .ActionCode }}
+	{{.}}
+	{{- end }}
+
+	log.Debugf("Action {{$count}} executed")
 }
 {{ $count = (increment $count) -}}
 {{end }}
@@ -286,10 +302,22 @@ func (this *{{$.ImplementationName}}) {{$Name}}() bool {
 func (this *{{.ImplementationName}}) updateLocalState() bool {
 	stateChanged := false
 
-	for _, stmtFunc := range this.guardedStatements {
-		if changed := stmtFunc(); changed {
-			stateChanged = true
+	couldExecute := []int{}
+	returnNeighbors := []*NeighborState{}
+
+	// Find all guards that light up
+	for index, stmtFunc := range this.guards {
+		if okayToExecute, nbr := stmtFunc(); okayToExecute {
+			couldExecute = append(couldExecute, index)
+			returnNeighbors = append(returnNeighbors, nbr)
 		}
+	}
+
+	// of all the guards that lighted out, pick a random guard and execute its action
+	if len(couldExecute) > 0 {
+		actionIndex := rand.Intn(len(couldExecute))
+		this.actions[couldExecute[actionIndex]](returnNeighbors[actionIndex])
+		stateChanged = true
 	}
 
 	return stateChanged

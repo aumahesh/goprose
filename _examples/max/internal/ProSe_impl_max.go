@@ -7,9 +7,8 @@ import (
 	"net"
 	"time"
 	"fmt"
-
-
 	"math/rand"
+
 
 
 	log "github.com/sirupsen/logrus"
@@ -48,7 +47,8 @@ type ProSe_impl_max struct {
 	neighborState map[string]*NeighborState
 	configuredPriority []int
 	runningPriority []int
-	guardedStatements []func() bool
+	guards []func() (bool, *NeighborState)
+	actions []func(*NeighborState)
 }
 
 func (this *ProSe_impl_max) init(id string, mcastAddr string) error {
@@ -57,7 +57,8 @@ func (this *ProSe_impl_max) init(id string, mcastAddr string) error {
 	this.mcastAddr = mcastAddr
 	this.configuredPriority = []int{}
 	this.runningPriority = []int{}
-	this.guardedStatements = []func() bool{}
+	this.guards = []func() (bool, *NeighborState){}
+	this.actions = []func(state *NeighborState){}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -88,7 +89,8 @@ func (this *ProSe_impl_max) init(id string, mcastAddr string) error {
 
 	this.configuredPriority = append(this.configuredPriority, 1)
 	this.runningPriority = append(this.runningPriority, 1)
-	this.guardedStatements = append(this.guardedStatements, this.doAction0)
+	this.guards = append(this.guards, this.evaluateGuard0)
+	this.actions = append(this.actions, this.executeAction0)
 
 
 	return nil
@@ -231,17 +233,19 @@ func (this *ProSe_impl_max) okayToRun(actionIndex int) bool {
 }
 
 
-func (this *ProSe_impl_max) doAction0() bool {
-	stateChanged := false
+func (this *ProSe_impl_max) evaluateGuard0() (bool, *NeighborState) {
+	var takeAction bool
+	var neighbor *NeighborState
+
+	takeAction = false
+	neighbor = nil
 
 	this.decrementPriority(0)
 	if this.okayToRun(0) {
-
-		log.Debugf("Executing: doAction0")
+		log.Debugf("Evaluating Guard 0")
 
 		
 		var found bool
-		var neighbor *NeighborState
 		for _, neighbor = range this.neighborState {
 			if (neighbor.state.X > this.state.X) {
 				found = true
@@ -249,26 +253,49 @@ func (this *ProSe_impl_max) doAction0() bool {
 			}
 		}
 		if found {
-			this.state.X = neighbor.state.X
-			stateChanged = true
+			takeAction = true
 		}
 
-		log.Debugf("doAction0: state changed: %v", stateChanged)
-
+		log.Debugf("Guard 0 evaluated to %v", takeAction)
 		this.resetPriority(0)
 	}
 
-	return stateChanged
+	return takeAction, neighbor
+}
+
+func (this *ProSe_impl_max) executeAction0(neighbor *NeighborState) {
+	log.Debugf("Executing Action 0")
+
+	
+	if neighbor == nil {
+		log.Errorf("invalid neighbor, nil received")
+		return
+	}
+	this.state.X = neighbor.state.X
+
+	log.Debugf("Action 0 executed")
 }
 
 
 func (this *ProSe_impl_max) updateLocalState() bool {
 	stateChanged := false
 
-	for _, stmtFunc := range this.guardedStatements {
-		if changed := stmtFunc(); changed {
-			stateChanged = true
+	couldExecute := []int{}
+	returnNeighbors := []*NeighborState{}
+
+	// Find all guards that light up
+	for index, stmtFunc := range this.guards {
+		if okayToExecute, nbr := stmtFunc(); okayToExecute {
+			couldExecute = append(couldExecute, index)
+			returnNeighbors = append(returnNeighbors, nbr)
 		}
+	}
+
+	// of all the guards that lighted out, pick a random guard and execute its action
+	if len(couldExecute) > 0 {
+		actionIndex := rand.Intn(len(couldExecute))
+		this.actions[couldExecute[actionIndex]](returnNeighbors[actionIndex])
+		stateChanged = true
 	}
 
 	return stateChanged

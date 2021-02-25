@@ -18,7 +18,7 @@ type Program struct {
 	Variables             map[string]*Variable
 	ConstantInitFunctions map[string]*Expression
 	VariableInitFunctions map[string]*Expression
-	Statements            map[string]*GuardedStatement
+	Statements            []*GuardedStatement
 }
 
 func (pv *Program) GetType(key string) (string, error) {

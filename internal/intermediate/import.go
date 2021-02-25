@@ -23,6 +23,7 @@ func NewImports(packages []string) (map[string]*Import, error) {
 		"github.com/dmichael/go-multicast/multicast": true,
 		"github.com/sirupsen/logrus":                 true,
 		"neighborhood":                               false,
+		"math/rand":                                  true,
 	}
 
 	for _, pkg := range packages {
