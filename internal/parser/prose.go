@@ -27,7 +27,8 @@ source			::= /empty/ | "." variable | "." "(" variable ")
 access			::= /empty/ | "public" | "private"
 type			::= "int" | "string" | "bool"
 statements		::= statement | statement "|" statements
-statement		::= expr "->" assignments
+statement		::= priority expr "->" assignments
+priority		::= /empty/ | "<" intconst ">"
 assignments		::= assignment ";" | assignment ";" assignments
 assignment		::= var_list "=" expr_list
 var_list		::= variable | variable "," var_list
