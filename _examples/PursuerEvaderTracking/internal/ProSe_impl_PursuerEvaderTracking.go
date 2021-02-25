@@ -4,44 +4,48 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"time"
+	"fmt"
+
 
 	"math/rand"
 
-	p "aumahesh.com/prose/PursuerEvaderTracking/models"
-	"github.com/dmichael/go-multicast/multicast"
-	"github.com/golang/protobuf/proto"
+
 	log "github.com/sirupsen/logrus"
+	"github.com/golang/protobuf/proto"
+	"github.com/dmichael/go-multicast/multicast"
+	p "aumahesh.com/prose/PursuerEvaderTracking/models"
 )
 
 const (
 	inactivityTimeout = time.Duration(2) * time.Minute
 	heartbeatInterval = time.Duration(1) * time.Minute
-	maxDatagramSize   = 1024
+	maxDatagramSize = 1024
 )
 
-var ()
+var (
+	
+)
 
 type NeighborState struct {
-	id              string
-	state           *p.State
-	discoveredAt    time.Time
-	updatedAt       time.Time
+	id string
+	state *p.State
+	discoveredAt time.Time
+	updatedAt time.Time
 	lastHeartBeatAt time.Time
-	stateChangedAt  time.Time
-	active          bool
+	stateChangedAt time.Time
+	active bool
 }
 
 type ProSe_impl_PursuerEvaderTracking struct {
-	id             string
-	state          *p.State
-	mcastAddr      string
-	mcastConn      *net.UDPConn
+	id string
+	state *p.State
+	mcastAddr string
+	mcastConn *net.UDPConn
 	receiveChannel chan *p.NeighborUpdate
-	hbChannel      chan *p.NeighborHeartBeat
-	neighborState  map[string]*NeighborState
+	hbChannel chan *p.NeighborHeartBeat
+	neighborState map[string]*NeighborState
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) init(id string, mcastAddr string) error {
@@ -60,15 +64,17 @@ func (this *ProSe_impl_PursuerEvaderTracking) init(id string, mcastAddr string) 
 
 	this.neighborState = map[string]*NeighborState{
 		this.id: &NeighborState{
-			id:              this.id,
-			state:           this.state,
-			discoveredAt:    time.Now(),
-			updatedAt:       time.Now(),
-			lastHeartBeatAt: time.Now(),
-			stateChangedAt:  time.Now(),
-			active:          true,
-		},
+					id: this.id,
+					state: this.state,
+					discoveredAt: time.Now(),
+					updatedAt: time.Now(),
+					lastHeartBeatAt: time.Now(),
+					stateChangedAt: time.Now(),
+					active: true,
+				},
 	}
+
+	
 
 	this.initState()
 
@@ -77,10 +83,12 @@ func (this *ProSe_impl_PursuerEvaderTracking) init(id string, mcastAddr string) 
 
 func (this *ProSe_impl_PursuerEvaderTracking) initState() {
 	this.state.DetectTimestamp = 0
-	this.state.Dist2Evader = 0
-	this.state.IsEvaderHere = false
-	this.state.P = ""
+        this.state.Dist2Evader = 0
+        this.state.IsEvaderHere = false
+        this.state.P = ""
+        
 
+	
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) EventHandler(ctx context.Context) {
@@ -91,18 +99,18 @@ func (this *ProSe_impl_PursuerEvaderTracking) EventHandler(ctx context.Context) 
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].state = &p.State{
-
-				DetectTimestamp: s.State.DetectTimestamp,
-				Dist2Evader:     s.State.Dist2Evader,
-				IsEvaderHere:    s.State.IsEvaderHere,
-				P:               s.State.P,
+				
+					DetectTimestamp: s.State.DetectTimestamp,
+					Dist2Evader: s.State.Dist2Evader,
+					IsEvaderHere: s.State.IsEvaderHere,
+					P: s.State.P,
 			}
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
@@ -119,12 +127,12 @@ func (this *ProSe_impl_PursuerEvaderTracking) EventHandler(ctx context.Context) 
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					state:          &p.State{},
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					state: &p.State{},
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
-					updatedAt:      time.Now(),
+					updatedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].lastHeartBeatAt = time.Now()
@@ -191,11 +199,13 @@ func (this *ProSe_impl_PursuerEvaderTracking) getNeighbor(id string, stateVariab
 	return nbr, nil
 }
 
+
 func (this *ProSe_impl_PursuerEvaderTracking) doAction0() bool {
 	stateChanged := false
 
 	log.Debugf("Executing: doAction0")
 
+	
 	if true {
 		temp0 := rand.Int63n(int64(2))
 		this.state.IsEvaderHere = (temp0 == int64(1))
@@ -212,6 +222,7 @@ func (this *ProSe_impl_PursuerEvaderTracking) doAction1() bool {
 
 	log.Debugf("Executing: doAction1")
 
+	
 	if this.state.IsEvaderHere {
 		this.state.P = this.id
 		this.state.Dist2Evader = int64(0)
@@ -230,10 +241,11 @@ func (this *ProSe_impl_PursuerEvaderTracking) doAction2() bool {
 
 	log.Debugf("Executing: doAction2")
 
+	
 	var found bool
 	var neighbor *NeighborState
 	for _, neighbor = range this.neighborState {
-		if (neighbor.state.DetectTimestamp > this.state.DetectTimestamp) || ((neighbor.state.DetectTimestamp == this.state.DetectTimestamp) && ((neighbor.state.Dist2Evader + int64(1)) < this.state.Dist2Evader)) {
+		if ((neighbor.state.DetectTimestamp > this.state.DetectTimestamp) || ((neighbor.state.DetectTimestamp == this.state.DetectTimestamp) && ((neighbor.state.Dist2Evader + int64(1)) < this.state.Dist2Evader))) {
 			found = true
 			break
 		}
@@ -250,6 +262,7 @@ func (this *ProSe_impl_PursuerEvaderTracking) doAction2() bool {
 	return stateChanged
 }
 
+
 func (this *ProSe_impl_PursuerEvaderTracking) updateLocalState() bool {
 	stateChanged := false
 
@@ -260,6 +273,7 @@ func (this *ProSe_impl_PursuerEvaderTracking) updateLocalState() bool {
 		this.doAction1,
 
 		this.doAction2,
+
 	}
 
 	for _, stmtFunc := range statements {
@@ -275,16 +289,16 @@ func (this *ProSe_impl_PursuerEvaderTracking) broadcastLocalState() (int, error)
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
-
-			DetectTimestamp: this.state.DetectTimestamp,
-			Dist2Evader:     this.state.Dist2Evader,
-			IsEvaderHere:    this.state.IsEvaderHere,
-			P:               this.state.P,
+			
+                DetectTimestamp: this.state.DetectTimestamp,
+                Dist2Evader: this.state.Dist2Evader,
+                IsEvaderHere: this.state.IsEvaderHere,
+                P: this.state.P,
 		},
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_StateUpdate,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Upd{updMessage},
 	}
 
@@ -293,12 +307,12 @@ func (this *ProSe_impl_PursuerEvaderTracking) broadcastLocalState() (int, error)
 
 func (this *ProSe_impl_PursuerEvaderTracking) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
-		Id:     this.id,
+		Id: this.id,
 		SentAt: time.Now().Unix(),
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_Heartbeat,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Hb{hbMessage},
 	}
 

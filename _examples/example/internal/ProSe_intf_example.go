@@ -19,3 +19,4 @@ func NewProSe_intf_example(id string, mcast string) (ProSe_intf_example, error) 
 	}
 	return x, nil
 }
+

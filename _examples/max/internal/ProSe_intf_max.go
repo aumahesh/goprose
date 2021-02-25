@@ -19,3 +19,4 @@ func NewProSe_intf_max(id string, mcast string) (ProSe_intf_max, error) {
 	}
 	return x, nil
 }
+

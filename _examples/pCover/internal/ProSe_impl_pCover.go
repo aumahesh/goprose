@@ -4,66 +4,81 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"time"
+	"fmt"
+
 
 	"math/rand"
 
-	p "aumahesh.com/prose/pCover/models"
-	"github.com/dmichael/go-multicast/multicast"
-	"github.com/golang/protobuf/proto"
+
 	log "github.com/sirupsen/logrus"
+	"github.com/golang/protobuf/proto"
+	"github.com/dmichael/go-multicast/multicast"
+	p "aumahesh.com/prose/pCover/models"
 )
 
 const (
 	inactivityTimeout = time.Duration(2) * time.Minute
 	heartbeatInterval = time.Duration(1) * time.Minute
-	maxDatagramSize   = 1024
+	maxDatagramSize = 1024
 )
 
 var (
+	
+	
 	OffThreshold int64 = 0
-
+	
+	
 	OnThreshold int64 = 0
-
+	
+	
 	S int64 = 0
-
+	
+	
 	W int64 = 0
-
+	
+	
 	X int64 = 0
-
+	
+	
 	Y int64 = 0
-
+	
+	
 	Z int64 = 0
-
+	
+	
 	awake int64 = 0
-
+	
+	
 	probe int64 = 0
-
+	
+	
 	readyoff int64 = 0
-
+	
+	
 	sleep int64 = 0
+	
 )
 
 type NeighborState struct {
-	id              string
-	state           *p.State
-	discoveredAt    time.Time
-	updatedAt       time.Time
+	id string
+	state *p.State
+	discoveredAt time.Time
+	updatedAt time.Time
 	lastHeartBeatAt time.Time
-	stateChangedAt  time.Time
-	active          bool
+	stateChangedAt time.Time
+	active bool
 }
 
 type ProSe_impl_pCover struct {
-	id             string
-	state          *p.State
-	mcastAddr      string
-	mcastConn      *net.UDPConn
+	id string
+	state *p.State
+	mcastAddr string
+	mcastConn *net.UDPConn
 	receiveChannel chan *p.NeighborUpdate
-	hbChannel      chan *p.NeighborHeartBeat
-	neighborState  map[string]*NeighborState
+	hbChannel chan *p.NeighborHeartBeat
+	neighborState map[string]*NeighborState
 }
 
 func (this *ProSe_impl_pCover) init(id string, mcastAddr string) error {
@@ -82,14 +97,14 @@ func (this *ProSe_impl_pCover) init(id string, mcastAddr string) error {
 
 	this.neighborState = map[string]*NeighborState{
 		this.id: &NeighborState{
-			id:              this.id,
-			state:           this.state,
-			discoveredAt:    time.Now(),
-			updatedAt:       time.Now(),
-			lastHeartBeatAt: time.Now(),
-			stateChangedAt:  time.Now(),
-			active:          true,
-		},
+					id: this.id,
+					state: this.state,
+					discoveredAt: time.Now(),
+					updatedAt: time.Now(),
+					lastHeartBeatAt: time.Now(),
+					stateChangedAt: time.Now(),
+					active: true,
+				},
 	}
 
 	OffThreshold = this.initConstantOffThreshold()
@@ -103,6 +118,7 @@ func (this *ProSe_impl_pCover) init(id string, mcastAddr string) error {
 	probe = this.initConstantprobe()
 	readyoff = this.initConstantreadyoff()
 	sleep = this.initConstantsleep()
+	
 
 	this.initState()
 
@@ -111,62 +127,64 @@ func (this *ProSe_impl_pCover) init(id string, mcastAddr string) error {
 
 func (this *ProSe_impl_pCover) initState() {
 	this.state.St = 0
-	this.state.Timer = 0
+        this.state.Timer = 0
+        
 
+	
 }
 
 func (this *ProSe_impl_pCover) initConstantOffThreshold() int64 {
-
+	
 	return int64(200)
 }
 
 func (this *ProSe_impl_pCover) initConstantOnThreshold() int64 {
-
+	
 	return int64(100)
 }
 
 func (this *ProSe_impl_pCover) initConstantS() int64 {
-
+	
 	return int64(40)
 }
 
 func (this *ProSe_impl_pCover) initConstantW() int64 {
-
+	
 	return int64(50)
 }
 
 func (this *ProSe_impl_pCover) initConstantX() int64 {
-
+	
 	return int64(10)
 }
 
 func (this *ProSe_impl_pCover) initConstantY() int64 {
-
+	
 	return int64(20)
 }
 
 func (this *ProSe_impl_pCover) initConstantZ() int64 {
-
+	
 	return int64(30)
 }
 
 func (this *ProSe_impl_pCover) initConstantawake() int64 {
-
+	
 	return int64(3)
 }
 
 func (this *ProSe_impl_pCover) initConstantprobe() int64 {
-
+	
 	return int64(2)
 }
 
 func (this *ProSe_impl_pCover) initConstantreadyoff() int64 {
-
+	
 	return int64(4)
 }
 
 func (this *ProSe_impl_pCover) initConstantsleep() int64 {
-
+	
 	return int64(1)
 }
 
@@ -178,16 +196,16 @@ func (this *ProSe_impl_pCover) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].state = &p.State{
-
-				St:    s.State.St,
-				Timer: s.State.Timer,
+				
+					St: s.State.St,
+					Timer: s.State.Timer,
 			}
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
@@ -204,12 +222,12 @@ func (this *ProSe_impl_pCover) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					state:          &p.State{},
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					state: &p.State{},
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
-					updatedAt:      time.Now(),
+					updatedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].lastHeartBeatAt = time.Now()
@@ -276,12 +294,14 @@ func (this *ProSe_impl_pCover) getNeighbor(id string, stateVariable string) (*Ne
 	return nbr, nil
 }
 
+
 func (this *ProSe_impl_pCover) doAction0() bool {
 	stateChanged := false
 
 	log.Debugf("Executing: doAction0")
 
-	if (this.state.St == sleep) && (this.state.Timer >= X) {
+	
+	if ((this.state.St == sleep) && (this.state.Timer >= X)) {
 		this.state.St = probe
 		this.state.Timer = int64(0)
 		stateChanged = true
@@ -297,8 +317,9 @@ func (this *ProSe_impl_pCover) doAction1() bool {
 
 	log.Debugf("Executing: doAction1")
 
+	
 	temp0 := rand.Int63n(int64(100))
-	if (this.state.St == probe) && ((this.state.Timer >= Y) && (temp0 > OnThreshold)) {
+	if ((this.state.St == probe) && ((this.state.Timer >= Y) && (temp0 > OnThreshold))) {
 		this.state.St = sleep
 		this.state.Timer = int64(0)
 		stateChanged = true
@@ -314,8 +335,9 @@ func (this *ProSe_impl_pCover) doAction2() bool {
 
 	log.Debugf("Executing: doAction2")
 
+	
 	temp1 := rand.Int63n(int64(100))
-	if (this.state.St == probe) && ((this.state.Timer >= Y) && (temp1 <= OffThreshold)) {
+	if ((this.state.St == probe) && ((this.state.Timer >= Y) && (temp1 <= OffThreshold))) {
 		this.state.St = awake
 		temp2 := rand.Int63n(S)
 		this.state.Timer = temp2
@@ -332,7 +354,8 @@ func (this *ProSe_impl_pCover) doAction3() bool {
 
 	log.Debugf("Executing: doAction3")
 
-	if (this.state.St == awake) && (this.state.Timer >= Z) {
+	
+	if ((this.state.St == awake) && (this.state.Timer >= Z)) {
 		this.state.St = readyoff
 		this.state.Timer = int64(0)
 		stateChanged = true
@@ -348,7 +371,8 @@ func (this *ProSe_impl_pCover) doAction4() bool {
 
 	log.Debugf("Executing: doAction4")
 
-	if (this.state.St == readyoff) && (this.state.Timer >= W) {
+	
+	if ((this.state.St == readyoff) && (this.state.Timer >= W)) {
 		this.state.St = awake
 		temp3 := rand.Int63n(S)
 		this.state.Timer = temp3
@@ -365,8 +389,9 @@ func (this *ProSe_impl_pCover) doAction5() bool {
 
 	log.Debugf("Executing: doAction5")
 
+	
 	temp4 := rand.Int63n(int64(100))
-	if (this.state.St == readyoff) && (temp4 > OffThreshold) {
+	if ((this.state.St == readyoff) && (temp4 > OffThreshold)) {
 		this.state.St = sleep
 		this.state.Timer = int64(0)
 		stateChanged = true
@@ -382,7 +407,8 @@ func (this *ProSe_impl_pCover) doAction6() bool {
 
 	log.Debugf("Executing: doAction6")
 
-	if ((this.state.St == sleep) && (this.state.Timer <= X)) || (((this.state.St == probe) && (this.state.Timer <= Y)) || (((this.state.St == awake) && (this.state.Timer <= Z)) || ((this.state.St == readyoff) && (this.state.Timer <= W)))) {
+	
+	if (((this.state.St == sleep) && (this.state.Timer <= X)) || (((this.state.St == probe) && (this.state.Timer <= Y)) || (((this.state.St == awake) && (this.state.Timer <= Z)) || ((this.state.St == readyoff) && (this.state.Timer <= W))))) {
 		this.state.Timer = (this.state.Timer + int64(1))
 		stateChanged = true
 	}
@@ -391,6 +417,7 @@ func (this *ProSe_impl_pCover) doAction6() bool {
 
 	return stateChanged
 }
+
 
 func (this *ProSe_impl_pCover) updateLocalState() bool {
 	stateChanged := false
@@ -410,6 +437,7 @@ func (this *ProSe_impl_pCover) updateLocalState() bool {
 		this.doAction5,
 
 		this.doAction6,
+
 	}
 
 	for _, stmtFunc := range statements {
@@ -425,14 +453,14 @@ func (this *ProSe_impl_pCover) broadcastLocalState() (int, error) {
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
-
-			St:    this.state.St,
-			Timer: this.state.Timer,
+			
+                St: this.state.St,
+                Timer: this.state.Timer,
 		},
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_StateUpdate,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Upd{updMessage},
 	}
 
@@ -441,12 +469,12 @@ func (this *ProSe_impl_pCover) broadcastLocalState() (int, error) {
 
 func (this *ProSe_impl_pCover) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
-		Id:     this.id,
+		Id: this.id,
 		SentAt: time.Now().Unix(),
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_Heartbeat,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Hb{hbMessage},
 	}
 

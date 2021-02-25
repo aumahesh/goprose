@@ -599,18 +599,13 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 		}
 		vvsrc := StringValue(src.VariableSource)
 		if vvsrc == e.sensorId {
-			vtemp := e.manager.NewTempVariable("unknown")
 			code := []string{
-				fmt.Sprintf("var %s %s", vtemp, GetProseTypeString(v.ProseType)),
-				fmt.Sprintf(`if neighbor.id == this.state.%s {`, util.ToCamelCase(vv.Name)),
-				fmt.Sprintf("\t%s = this.state.%s", vtemp, util.ToCamelCase(v.Name)),
-				fmt.Sprintf("} else {"),
+				fmt.Sprintf(`if neighbor.id != this.state.%s {`, util.ToCamelCase(vv.Name)),
 				fmt.Sprintf("\tcontinue"),
 				fmt.Sprintf("}"),
 			}
 			e.Code = append(e.Code, code...)
-			e.Temps = append(e.Temps, vtemp)
-			return vtemp, nil
+			return fmt.Sprintf("neighbor.state.%s", util.ToCamelCase(v.Name)), nil
 		} else {
 			// TODO
 		}

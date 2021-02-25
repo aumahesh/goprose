@@ -4,46 +4,52 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"time"
+	"fmt"
 
-	p "aumahesh.com/prose/TreeColoring/models"
-	"github.com/dmichael/go-multicast/multicast"
-	"github.com/golang/protobuf/proto"
+
+
 	log "github.com/sirupsen/logrus"
+	"github.com/golang/protobuf/proto"
+	"github.com/dmichael/go-multicast/multicast"
+	p "aumahesh.com/prose/TreeColoring/models"
 )
 
 const (
 	inactivityTimeout = time.Duration(2) * time.Minute
 	heartbeatInterval = time.Duration(1) * time.Minute
-	maxDatagramSize   = 1024
+	maxDatagramSize = 1024
 )
 
 var (
+	
+	
 	green int64 = 0
-
+	
+	
 	red int64 = 0
+	
 )
 
 type NeighborState struct {
-	id              string
-	state           *p.State
-	discoveredAt    time.Time
-	updatedAt       time.Time
+	id string
+	state *p.State
+	discoveredAt time.Time
+	updatedAt time.Time
 	lastHeartBeatAt time.Time
-	stateChangedAt  time.Time
-	active          bool
+	stateChangedAt time.Time
+	active bool
 }
 
 type ProSe_impl_TreeColoring struct {
-	id             string
-	state          *p.State
-	mcastAddr      string
-	mcastConn      *net.UDPConn
+	id string
+	state *p.State
+	mcastAddr string
+	mcastConn *net.UDPConn
 	receiveChannel chan *p.NeighborUpdate
-	hbChannel      chan *p.NeighborHeartBeat
-	neighborState  map[string]*NeighborState
+	hbChannel chan *p.NeighborHeartBeat
+	neighborState map[string]*NeighborState
 }
 
 func (this *ProSe_impl_TreeColoring) init(id string, mcastAddr string) error {
@@ -62,18 +68,19 @@ func (this *ProSe_impl_TreeColoring) init(id string, mcastAddr string) error {
 
 	this.neighborState = map[string]*NeighborState{
 		this.id: &NeighborState{
-			id:              this.id,
-			state:           this.state,
-			discoveredAt:    time.Now(),
-			updatedAt:       time.Now(),
-			lastHeartBeatAt: time.Now(),
-			stateChangedAt:  time.Now(),
-			active:          true,
-		},
+					id: this.id,
+					state: this.state,
+					discoveredAt: time.Now(),
+					updatedAt: time.Now(),
+					lastHeartBeatAt: time.Now(),
+					stateChangedAt: time.Now(),
+					active: true,
+				},
 	}
 
 	green = this.initConstantgreen()
 	red = this.initConstantred()
+	
 
 	this.initState()
 
@@ -82,38 +89,39 @@ func (this *ProSe_impl_TreeColoring) init(id string, mcastAddr string) error {
 
 func (this *ProSe_impl_TreeColoring) initState() {
 	this.state.P = ""
-	this.state.Color = 0
-	this.state.Root = ""
-	this.state.Tmp = false
+        this.state.Color = 0
+        this.state.Root = ""
+        this.state.Tmp = false
+        
 
 	this.state.P = this.initVaribleP()
 	this.state.Color = this.initVaribleColor()
 	this.state.Root = this.initVaribleRoot()
-
+	
 }
 
 func (this *ProSe_impl_TreeColoring) initConstantgreen() int64 {
-
+	
 	return int64(1)
 }
 
 func (this *ProSe_impl_TreeColoring) initConstantred() int64 {
-
+	
 	return int64(0)
 }
 
 func (this *ProSe_impl_TreeColoring) initVaribleP() string {
-
+    
 	return this.id
 }
 
 func (this *ProSe_impl_TreeColoring) initVaribleColor() int64 {
-
+    
 	return green
 }
 
 func (this *ProSe_impl_TreeColoring) initVaribleRoot() string {
-
+    
 	return this.id
 }
 
@@ -125,18 +133,18 @@ func (this *ProSe_impl_TreeColoring) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].state = &p.State{
-
-				P:     s.State.P,
-				Color: s.State.Color,
-				Root:  s.State.Root,
-				Tmp:   s.State.Tmp,
+				
+					P: s.State.P,
+					Color: s.State.Color,
+					Root: s.State.Root,
+					Tmp: s.State.Tmp,
 			}
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
@@ -153,12 +161,12 @@ func (this *ProSe_impl_TreeColoring) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					state:          &p.State{},
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					state: &p.State{},
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
-					updatedAt:      time.Now(),
+					updatedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].lastHeartBeatAt = time.Now()
@@ -225,22 +233,21 @@ func (this *ProSe_impl_TreeColoring) getNeighbor(id string, stateVariable string
 	return nbr, nil
 }
 
+
 func (this *ProSe_impl_TreeColoring) doAction0() bool {
 	stateChanged := false
 
 	log.Debugf("Executing: doAction0")
 
+	
 	var found bool
 	var neighbor *NeighborState
 	for _, neighbor = range this.neighborState {
 		temp0 := this.isNeighborUp(this.state.P)
-		var temp1 int64
-		if neighbor.id == this.state.P {
-			temp1 = this.state.Color
-		} else {
+		if neighbor.id != this.state.P {
 			continue
 		}
-		if (this.state.Color == green) && ((temp0 == false) || (temp1 == red)) {
+		if ((this.state.Color == green) && ((temp0 == false) || (neighbor.state.Color == red))) {
 			found = true
 			break
 		}
@@ -260,15 +267,16 @@ func (this *ProSe_impl_TreeColoring) doAction1() bool {
 
 	log.Debugf("Executing: doAction1")
 
-	temp2 := this.neighbors()
-	temp3 := true
-	for _, neighbor := range temp2 {
-		if temp3 && !(neighbor.state.P != this.id) {
-			temp3 = false
+	
+	temp1 := this.neighbors()
+	temp2 := true
+	for _, neighbor := range temp1 {
+		if temp2 && !(neighbor.state.P != this.id) {
+			temp2 = false
 			break
 		}
 	}
-	if (this.state.Color == red) && temp3 {
+	if ((this.state.Color == red) && temp2) {
 		this.state.Color = green
 		this.state.P = this.id
 		this.state.Root = this.id
@@ -285,10 +293,11 @@ func (this *ProSe_impl_TreeColoring) doAction2() bool {
 
 	log.Debugf("Executing: doAction2")
 
+	
 	var found bool
 	var neighbor *NeighborState
 	for _, neighbor = range this.neighborState {
-		if (this.state.Root < neighbor.state.Root) && ((this.state.Color == green) && (neighbor.state.Color == green)) {
+		if ((this.state.Root < neighbor.state.Root) && ((this.state.Color == green) && (neighbor.state.Color == green))) {
 			found = true
 			break
 		}
@@ -309,10 +318,11 @@ func (this *ProSe_impl_TreeColoring) doAction3() bool {
 
 	log.Debugf("Executing: doAction3")
 
-	temp4 := this.isNeighborUp(this.id)
-	if temp4 {
-		temp5 := this.setNeighbor(this.id, false)
-		this.state.Tmp = temp5
+	
+	temp3 := this.isNeighborUp(this.id)
+	if temp3 {
+		temp4 := this.setNeighbor(this.id, false)
+		this.state.Tmp = temp4
 		stateChanged = true
 	}
 
@@ -326,10 +336,11 @@ func (this *ProSe_impl_TreeColoring) doAction4() bool {
 
 	log.Debugf("Executing: doAction4")
 
-	temp6 := this.isNeighborUp(this.id)
-	if temp6 == false {
-		temp7 := this.setNeighbor(this.id, true)
-		this.state.Tmp = temp7
+	
+	temp5 := this.isNeighborUp(this.id)
+	if (temp5 == false) {
+		temp6 := this.setNeighbor(this.id, true)
+		this.state.Tmp = temp6
 		this.state.P = this.id
 		this.state.Color = red
 		stateChanged = true
@@ -339,6 +350,7 @@ func (this *ProSe_impl_TreeColoring) doAction4() bool {
 
 	return stateChanged
 }
+
 
 func (this *ProSe_impl_TreeColoring) updateLocalState() bool {
 	stateChanged := false
@@ -354,6 +366,7 @@ func (this *ProSe_impl_TreeColoring) updateLocalState() bool {
 		this.doAction3,
 
 		this.doAction4,
+
 	}
 
 	for _, stmtFunc := range statements {
@@ -369,16 +382,16 @@ func (this *ProSe_impl_TreeColoring) broadcastLocalState() (int, error) {
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
-
-			P:     this.state.P,
-			Color: this.state.Color,
-			Root:  this.state.Root,
-			Tmp:   this.state.Tmp,
+			
+                P: this.state.P,
+                Color: this.state.Color,
+                Root: this.state.Root,
+                Tmp: this.state.Tmp,
 		},
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_StateUpdate,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Upd{updMessage},
 	}
 
@@ -387,12 +400,12 @@ func (this *ProSe_impl_TreeColoring) broadcastLocalState() (int, error) {
 
 func (this *ProSe_impl_TreeColoring) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
-		Id:     this.id,
+		Id: this.id,
 		SentAt: time.Now().Unix(),
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_Heartbeat,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Hb{hbMessage},
 	}
 

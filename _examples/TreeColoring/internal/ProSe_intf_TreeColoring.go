@@ -19,3 +19,4 @@ func NewProSe_intf_TreeColoring(id string, mcast string) (ProSe_intf_TreeColorin
 	}
 	return x, nil
 }
+

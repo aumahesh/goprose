@@ -272,37 +272,22 @@ func (this *ProSe_impl_RoutingTreeMaintenance) doAction2() bool {
 	var neighbor *NeighborState
 	for _, neighbor = range this.neighborState {
 		temp3 := this.isNeighborUp(this.state.P)
-		var temp4 int64
-		if neighbor.id == this.state.P {
-			temp4 = this.state.Inv
-		} else {
+		if neighbor.id != this.state.P {
 			continue
 		}
-		var temp5 int64
-		if neighbor.id == this.state.P {
-			temp5 = this.state.Dist
-		} else {
+		if neighbor.id != this.state.P {
 			continue
 		}
-		var temp6 int64
-		if neighbor.id == this.state.P {
-			temp6 = this.state.Inv
-		} else {
+		if neighbor.id != this.state.P {
 			continue
 		}
-		var temp7 int64
-		if neighbor.id == this.state.P {
-			temp7 = this.state.Dist
-		} else {
+		if neighbor.id != this.state.P {
 			continue
 		}
-		var temp8 int64
-		if neighbor.id == this.state.P {
-			temp8 = this.state.Inv
-		} else {
+		if neighbor.id != this.state.P {
 			continue
 		}
-		if (this.state.P != "") && ((temp3 == false) || ((temp4 >= CMAX) || (((temp5 < this.state.Dist) && (this.state.Inv != temp6)) || ((temp7 > this.state.Dist) && (this.state.Inv != (temp8 + int64(1))))))) {
+		if (this.state.P != "") && ((temp3 == false) || ((neighbor.state.Inv >= CMAX) || (((neighbor.state.Dist < this.state.Dist) && (this.state.Inv != neighbor.state.Inv)) || ((neighbor.state.Dist > this.state.Dist) && (this.state.Inv != (neighbor.state.Inv + int64(1))))))) {
 			found = true
 			break
 		}

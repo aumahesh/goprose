@@ -4,48 +4,55 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"time"
+	"fmt"
 
-	p "aumahesh.com/prose/DistributedReset/models"
-	"github.com/dmichael/go-multicast/multicast"
-	"github.com/golang/protobuf/proto"
+
+
 	log "github.com/sirupsen/logrus"
+	"github.com/golang/protobuf/proto"
+	"github.com/dmichael/go-multicast/multicast"
+	p "aumahesh.com/prose/DistributedReset/models"
 )
 
 const (
 	inactivityTimeout = time.Duration(2) * time.Minute
 	heartbeatInterval = time.Duration(1) * time.Minute
-	maxDatagramSize   = 1024
+	maxDatagramSize = 1024
 )
 
 var (
+	
+	
 	initiate int64 = 0
-
+	
+	
 	normal int64 = 0
-
+	
+	
 	reset int64 = 0
+	
 )
 
 type NeighborState struct {
-	id              string
-	state           *p.State
-	discoveredAt    time.Time
-	updatedAt       time.Time
+	id string
+	state *p.State
+	discoveredAt time.Time
+	updatedAt time.Time
 	lastHeartBeatAt time.Time
-	stateChangedAt  time.Time
-	active          bool
+	stateChangedAt time.Time
+	active bool
 }
 
 type ProSe_impl_DistributedReset struct {
-	id             string
-	state          *p.State
-	mcastAddr      string
-	mcastConn      *net.UDPConn
+	id string
+	state *p.State
+	mcastAddr string
+	mcastConn *net.UDPConn
 	receiveChannel chan *p.NeighborUpdate
-	hbChannel      chan *p.NeighborHeartBeat
-	neighborState  map[string]*NeighborState
+	hbChannel chan *p.NeighborHeartBeat
+	neighborState map[string]*NeighborState
 }
 
 func (this *ProSe_impl_DistributedReset) init(id string, mcastAddr string) error {
@@ -64,19 +71,20 @@ func (this *ProSe_impl_DistributedReset) init(id string, mcastAddr string) error
 
 	this.neighborState = map[string]*NeighborState{
 		this.id: &NeighborState{
-			id:              this.id,
-			state:           this.state,
-			discoveredAt:    time.Now(),
-			updatedAt:       time.Now(),
-			lastHeartBeatAt: time.Now(),
-			stateChangedAt:  time.Now(),
-			active:          true,
-		},
+					id: this.id,
+					state: this.state,
+					discoveredAt: time.Now(),
+					updatedAt: time.Now(),
+					lastHeartBeatAt: time.Now(),
+					stateChangedAt: time.Now(),
+					active: true,
+				},
 	}
 
 	initiate = this.initConstantinitiate()
 	normal = this.initConstantnormal()
 	reset = this.initConstantreset()
+	
 
 	this.initState()
 
@@ -85,42 +93,43 @@ func (this *ProSe_impl_DistributedReset) init(id string, mcastAddr string) error
 
 func (this *ProSe_impl_DistributedReset) initState() {
 	this.state.P = ""
-	this.state.Sn = 0
-	this.state.St = 0
+        this.state.Sn = 0
+        this.state.St = 0
+        
 
 	this.state.P = this.initVaribleP()
 	this.state.Sn = this.initVaribleSn()
 	this.state.St = this.initVaribleSt()
-
+	
 }
 
 func (this *ProSe_impl_DistributedReset) initConstantinitiate() int64 {
-
+	
 	return int64(1)
 }
 
 func (this *ProSe_impl_DistributedReset) initConstantnormal() int64 {
-
+	
 	return int64(3)
 }
 
 func (this *ProSe_impl_DistributedReset) initConstantreset() int64 {
-
+	
 	return int64(2)
 }
 
 func (this *ProSe_impl_DistributedReset) initVaribleP() string {
-
+    
 	return this.id
 }
 
 func (this *ProSe_impl_DistributedReset) initVaribleSn() int64 {
-
+    
 	return int64(1)
 }
 
 func (this *ProSe_impl_DistributedReset) initVaribleSt() int64 {
-
+    
 	return initiate
 }
 
@@ -132,17 +141,17 @@ func (this *ProSe_impl_DistributedReset) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].state = &p.State{
-
-				P:  s.State.P,
-				Sn: s.State.Sn,
-				St: s.State.St,
+				
+					P: s.State.P,
+					Sn: s.State.Sn,
+					St: s.State.St,
 			}
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
@@ -159,12 +168,12 @@ func (this *ProSe_impl_DistributedReset) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					state:          &p.State{},
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					state: &p.State{},
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
-					updatedAt:      time.Now(),
+					updatedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].lastHeartBeatAt = time.Now()
@@ -231,12 +240,14 @@ func (this *ProSe_impl_DistributedReset) getNeighbor(id string, stateVariable st
 	return nbr, nil
 }
 
+
 func (this *ProSe_impl_DistributedReset) doAction0() bool {
 	stateChanged := false
 
 	log.Debugf("Executing: doAction0")
 
-	if (this.state.St == initiate) && (this.state.P == this.id) {
+	
+	if ((this.state.St == initiate) && (this.state.P == this.id)) {
 		this.state.St = reset
 		this.state.Sn = (this.state.Sn + int64(1))
 		stateChanged = true
@@ -252,10 +263,11 @@ func (this *ProSe_impl_DistributedReset) doAction1() bool {
 
 	log.Debugf("Executing: doAction1")
 
+	
 	var found bool
 	var neighbor *NeighborState
 	for _, neighbor = range this.neighborState {
-		if (this.state.St != reset) && ((this.state.P == neighbor.id) && ((neighbor.state.St == reset) && ((this.state.Sn + int64(1)) == neighbor.state.Sn))) {
+		if ((this.state.St != reset) && ((this.state.P == neighbor.id) && ((neighbor.state.St == reset) && ((this.state.Sn + int64(1)) == neighbor.state.Sn)))) {
 			found = true
 			break
 		}
@@ -276,6 +288,7 @@ func (this *ProSe_impl_DistributedReset) doAction2() bool {
 
 	log.Debugf("Executing: doAction2")
 
+	
 	temp0 := this.neighbors()
 	temp2 := true
 	for _, neighbor := range temp0 {
@@ -285,7 +298,7 @@ func (this *ProSe_impl_DistributedReset) doAction2() bool {
 			break
 		}
 	}
-	if (this.state.St == reset) && temp2 {
+	if ((this.state.St == reset) && temp2) {
 		this.state.St = normal
 		stateChanged = true
 	}
@@ -300,12 +313,13 @@ func (this *ProSe_impl_DistributedReset) doAction3() bool {
 
 	log.Debugf("Executing: doAction3")
 
+	
 	var found bool
 	var neighbor *NeighborState
 	for _, neighbor = range this.neighborState {
 		temp3 := !((this.state.P == neighbor.id) && (neighbor.state.St != reset))
 		temp4 := !((this.state.P == neighbor.id) && (neighbor.state.St == reset))
-		if !((temp3 || ((this.state.St != reset) && (neighbor.state.Sn == this.state.Sn))) && (temp4 || (((this.state.St != reset) && (neighbor.state.Sn == (this.state.Sn + int64(1)))) || (neighbor.state.Sn == this.state.Sn)))) {
+		if (! ((temp3 || ((this.state.St != reset) && (neighbor.state.Sn == this.state.Sn))) && (temp4 || (((this.state.St != reset) && (neighbor.state.Sn == (this.state.Sn + int64(1)))) || (neighbor.state.Sn == this.state.Sn))))) {
 			found = true
 			break
 		}
@@ -321,6 +335,7 @@ func (this *ProSe_impl_DistributedReset) doAction3() bool {
 	return stateChanged
 }
 
+
 func (this *ProSe_impl_DistributedReset) updateLocalState() bool {
 	stateChanged := false
 
@@ -333,6 +348,7 @@ func (this *ProSe_impl_DistributedReset) updateLocalState() bool {
 		this.doAction2,
 
 		this.doAction3,
+
 	}
 
 	for _, stmtFunc := range statements {
@@ -348,15 +364,15 @@ func (this *ProSe_impl_DistributedReset) broadcastLocalState() (int, error) {
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
-
-			P:  this.state.P,
-			Sn: this.state.Sn,
-			St: this.state.St,
+			
+                P: this.state.P,
+                Sn: this.state.Sn,
+                St: this.state.St,
 		},
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_StateUpdate,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Upd{updMessage},
 	}
 
@@ -365,12 +381,12 @@ func (this *ProSe_impl_DistributedReset) broadcastLocalState() (int, error) {
 
 func (this *ProSe_impl_DistributedReset) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
-		Id:     this.id,
+		Id: this.id,
 		SentAt: time.Now().Unix(),
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_Heartbeat,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Hb{hbMessage},
 	}
 

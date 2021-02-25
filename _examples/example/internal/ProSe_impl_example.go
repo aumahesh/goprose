@@ -4,44 +4,49 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"time"
+	"fmt"
 
-	p "aumahesh.com/prose/example/models"
-	"github.com/dmichael/go-multicast/multicast"
-	"github.com/golang/protobuf/proto"
+
+
 	log "github.com/sirupsen/logrus"
+	"github.com/golang/protobuf/proto"
+	"github.com/dmichael/go-multicast/multicast"
+	p "aumahesh.com/prose/example/models"
 )
 
 const (
 	inactivityTimeout = time.Duration(2) * time.Minute
 	heartbeatInterval = time.Duration(1) * time.Minute
-	maxDatagramSize   = 1024
+	maxDatagramSize = 1024
 )
 
 var (
+	
+	
 	a int64 = 0
+	
 )
 
 type NeighborState struct {
-	id              string
-	state           *p.State
-	discoveredAt    time.Time
-	updatedAt       time.Time
+	id string
+	state *p.State
+	discoveredAt time.Time
+	updatedAt time.Time
 	lastHeartBeatAt time.Time
-	stateChangedAt  time.Time
-	active          bool
+	stateChangedAt time.Time
+	active bool
 }
 
 type ProSe_impl_example struct {
-	id             string
-	state          *p.State
-	mcastAddr      string
-	mcastConn      *net.UDPConn
+	id string
+	state *p.State
+	mcastAddr string
+	mcastConn *net.UDPConn
 	receiveChannel chan *p.NeighborUpdate
-	hbChannel      chan *p.NeighborHeartBeat
-	neighborState  map[string]*NeighborState
+	hbChannel chan *p.NeighborHeartBeat
+	neighborState map[string]*NeighborState
 }
 
 func (this *ProSe_impl_example) init(id string, mcastAddr string) error {
@@ -60,17 +65,18 @@ func (this *ProSe_impl_example) init(id string, mcastAddr string) error {
 
 	this.neighborState = map[string]*NeighborState{
 		this.id: &NeighborState{
-			id:              this.id,
-			state:           this.state,
-			discoveredAt:    time.Now(),
-			updatedAt:       time.Now(),
-			lastHeartBeatAt: time.Now(),
-			stateChangedAt:  time.Now(),
-			active:          true,
-		},
+					id: this.id,
+					state: this.state,
+					discoveredAt: time.Now(),
+					updatedAt: time.Now(),
+					lastHeartBeatAt: time.Now(),
+					stateChangedAt: time.Now(),
+					active: true,
+				},
 	}
 
 	a = this.initConstanta()
+	
 
 	this.initState()
 
@@ -79,35 +85,36 @@ func (this *ProSe_impl_example) init(id string, mcastAddr string) error {
 
 func (this *ProSe_impl_example) initState() {
 	this.state.Msg = ""
-	this.state.St = 0
-	this.state.Timer = 0
-	this.state.Tmp = false
-	this.state.X = 0
+        this.state.St = 0
+        this.state.Timer = 0
+        this.state.Tmp = false
+        this.state.X = 0
+        
 
 	this.state.Msg = this.initVaribleMsg()
 	this.state.Tmp = this.initVaribleTmp()
 	this.state.X = this.initVaribleX()
-
+	
 }
 
 func (this *ProSe_impl_example) initConstanta() int64 {
-
+	
 	return int64(20)
 }
 
 func (this *ProSe_impl_example) initVaribleMsg() string {
-
+    
 	return "Hello, World!"
 }
 
 func (this *ProSe_impl_example) initVaribleTmp() bool {
-
+    
 	return true
 }
 
 func (this *ProSe_impl_example) initVaribleX() int64 {
-
-	return ((-int64(10)) + int64(500))
+    
+	return ((- int64(10)) + int64(500))
 }
 
 func (this *ProSe_impl_example) EventHandler(ctx context.Context) {
@@ -118,19 +125,19 @@ func (this *ProSe_impl_example) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].state = &p.State{
-
-				Msg:   s.State.Msg,
-				St:    s.State.St,
-				Timer: s.State.Timer,
-				Tmp:   s.State.Tmp,
-				X:     s.State.X,
+				
+					Msg: s.State.Msg,
+					St: s.State.St,
+					Timer: s.State.Timer,
+					Tmp: s.State.Tmp,
+					X: s.State.X,
 			}
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
@@ -147,12 +154,12 @@ func (this *ProSe_impl_example) EventHandler(ctx context.Context) {
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					state:          &p.State{},
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					state: &p.State{},
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
-					updatedAt:      time.Now(),
+					updatedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].lastHeartBeatAt = time.Now()
@@ -219,12 +226,14 @@ func (this *ProSe_impl_example) getNeighbor(id string, stateVariable string) (*N
 	return nbr, nil
 }
 
+
 func (this *ProSe_impl_example) doAction0() bool {
 	stateChanged := false
 
 	log.Debugf("Executing: doAction0")
 
-	if (!(this.state.St == int64(1))) && (this.state.Timer >= a) {
+	
+	if ((! (this.state.St == int64(1))) && (this.state.Timer >= a)) {
 		this.state.St = int64(2)
 		this.state.Timer = int64(10)
 		stateChanged = true
@@ -235,12 +244,14 @@ func (this *ProSe_impl_example) doAction0() bool {
 	return stateChanged
 }
 
+
 func (this *ProSe_impl_example) updateLocalState() bool {
 	stateChanged := false
 
 	statements := []func() bool{
 
 		this.doAction0,
+
 	}
 
 	for _, stmtFunc := range statements {
@@ -256,17 +267,17 @@ func (this *ProSe_impl_example) broadcastLocalState() (int, error) {
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
-
-			Msg:   this.state.Msg,
-			St:    this.state.St,
-			Timer: this.state.Timer,
-			Tmp:   this.state.Tmp,
-			X:     this.state.X,
+			
+                Msg: this.state.Msg,
+                St: this.state.St,
+                Timer: this.state.Timer,
+                Tmp: this.state.Tmp,
+                X: this.state.X,
 		},
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_StateUpdate,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Upd{updMessage},
 	}
 
@@ -275,12 +286,12 @@ func (this *ProSe_impl_example) broadcastLocalState() (int, error) {
 
 func (this *ProSe_impl_example) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
-		Id:     this.id,
+		Id: this.id,
 		SentAt: time.Now().Unix(),
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_Heartbeat,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Hb{hbMessage},
 	}
 

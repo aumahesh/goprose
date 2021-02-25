@@ -19,3 +19,4 @@ func NewProSe_intf_DistributedReset(id string, mcast string) (ProSe_intf_Distrib
 	}
 	return x, nil
 }
+
