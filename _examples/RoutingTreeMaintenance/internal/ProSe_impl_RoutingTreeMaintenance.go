@@ -4,52 +4,63 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"time"
+	"fmt"
+
 
 	"math/rand"
 
-	p "aumahesh.com/prose/RoutingTreeMaintenance/models"
-	"github.com/dmichael/go-multicast/multicast"
-	"github.com/golang/protobuf/proto"
+
 	log "github.com/sirupsen/logrus"
+	"github.com/golang/protobuf/proto"
+	"github.com/dmichael/go-multicast/multicast"
+	p "aumahesh.com/prose/RoutingTreeMaintenance/models"
 )
 
 const (
 	inactivityTimeout = time.Duration(2) * time.Minute
 	heartbeatInterval = time.Duration(1) * time.Minute
-	maxDatagramSize   = 1024
+	maxDatagramSize = 1024
 )
 
 var (
+	
+	
 	CMAX int64 = 0
+	
 )
 
 type NeighborState struct {
-	id              string
-	state           *p.State
-	discoveredAt    time.Time
-	updatedAt       time.Time
+	id string
+	state *p.State
+	discoveredAt time.Time
+	updatedAt time.Time
 	lastHeartBeatAt time.Time
-	stateChangedAt  time.Time
-	active          bool
+	stateChangedAt time.Time
+	active bool
 }
 
 type ProSe_impl_RoutingTreeMaintenance struct {
-	id             string
-	state          *p.State
-	mcastAddr      string
-	mcastConn      *net.UDPConn
+	id string
+	state *p.State
+	mcastAddr string
+	mcastConn *net.UDPConn
 	receiveChannel chan *p.NeighborUpdate
-	hbChannel      chan *p.NeighborHeartBeat
-	neighborState  map[string]*NeighborState
+	hbChannel chan *p.NeighborHeartBeat
+	neighborState map[string]*NeighborState
+	configuredPriority []int
+	runningPriority []int
+	guardedStatements []func() bool
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
+	this.configuredPriority = []int{}
+	this.runningPriority = []int{}
+	this.guardedStatements = []func() bool{}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -62,47 +73,68 @@ func (this *ProSe_impl_RoutingTreeMaintenance) init(id string, mcastAddr string)
 
 	this.neighborState = map[string]*NeighborState{
 		this.id: &NeighborState{
-			id:              this.id,
-			state:           this.state,
-			discoveredAt:    time.Now(),
-			updatedAt:       time.Now(),
-			lastHeartBeatAt: time.Now(),
-			stateChangedAt:  time.Now(),
-			active:          true,
-		},
+					id: this.id,
+					state: this.state,
+					discoveredAt: time.Now(),
+					updatedAt: time.Now(),
+					lastHeartBeatAt: time.Now(),
+					stateChangedAt: time.Now(),
+					active: true,
+				},
 	}
 
 	CMAX = this.initConstantCMAX()
+	
 
 	this.initState()
+
+	// set priorities for actions
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction0)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction1)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction2)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction3)
+
 
 	return nil
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) initState() {
 	this.state.Dist = 0
-	this.state.Inv = 0
-	this.state.P = ""
+        this.state.Inv = 0
+        this.state.P = ""
+        
 
 	this.state.Dist = this.initVaribleDist()
 	this.state.Inv = this.initVaribleInv()
-
+	
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) initConstantCMAX() int64 {
-
+	
 	return int64(100)
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) initVaribleDist() int64 {
-
+    
 	temp0 := rand.Int63n(int64(10))
-
+    
 	return temp0
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) initVaribleInv() int64 {
-
+    
 	return int64(0)
 }
 
@@ -114,17 +146,17 @@ func (this *ProSe_impl_RoutingTreeMaintenance) EventHandler(ctx context.Context)
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].state = &p.State{
-
-				Dist: s.State.Dist,
-				Inv:  s.State.Inv,
-				P:    s.State.P,
+				
+					Dist: s.State.Dist,
+					Inv: s.State.Inv,
+					P: s.State.P,
 			}
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
@@ -141,12 +173,12 @@ func (this *ProSe_impl_RoutingTreeMaintenance) EventHandler(ctx context.Context)
 			_, ok := this.neighborState[s.Id]
 			if !ok {
 				this.neighborState[s.Id] = &NeighborState{
-					id:             s.Id,
-					state:          &p.State{},
-					discoveredAt:   time.Now(),
-					active:         true,
+					id: s.Id,
+					state: &p.State{},
+					discoveredAt: time.Now(),
+					active: true,
 					stateChangedAt: time.Now(),
-					updatedAt:      time.Now(),
+					updatedAt: time.Now(),
 				}
 			}
 			this.neighborState[s.Id].lastHeartBeatAt = time.Now()
@@ -213,27 +245,51 @@ func (this *ProSe_impl_RoutingTreeMaintenance) getNeighbor(id string, stateVaria
 	return nbr, nil
 }
 
+func (this *ProSe_impl_RoutingTreeMaintenance) decrementPriority(actionIndex int) {
+	p := this.runningPriority[actionIndex]
+	this.runningPriority[actionIndex] = p-1
+}
+
+func (this *ProSe_impl_RoutingTreeMaintenance) resetPriority(actionIndex int) {
+	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
+}
+
+func (this *ProSe_impl_RoutingTreeMaintenance) okayToRun(actionIndex int) bool {
+	if this.runningPriority[actionIndex] == 0 {
+		return true
+	}
+	return false
+}
+
+
 func (this *ProSe_impl_RoutingTreeMaintenance) doAction0() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction0")
+	this.decrementPriority(0)
+	if this.okayToRun(0) {
 
-	var found bool
-	var neighbor *NeighborState
-	for _, neighbor = range this.neighborState {
-		temp1 := this.isNeighborUp(neighbor.id)
-		if (neighbor.state.Dist < this.state.Dist) && (temp1 && ((neighbor.state.Inv < CMAX) && (neighbor.state.Inv < this.state.Inv))) {
-			found = true
-			break
+		log.Debugf("Executing: doAction0")
+
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			temp1 := this.isNeighborUp(neighbor.id)
+			if ((neighbor.state.Dist < this.state.Dist) && (temp1 && ((neighbor.state.Inv < CMAX) && (neighbor.state.Inv < this.state.Inv)))) {
+				found = true
+				break
+			}
 		}
-	}
-	if found {
-		this.state.P = neighbor.id
-		this.state.Inv = neighbor.state.Inv
-		stateChanged = true
-	}
+		if found {
+			this.state.P = neighbor.id
+			this.state.Inv = neighbor.state.Inv
+			stateChanged = true
+		}
 
-	log.Debugf("doAction0: state changed: %v", stateChanged)
+		log.Debugf("doAction0: state changed: %v", stateChanged)
+
+		this.resetPriority(0)
+	}
 
 	return stateChanged
 }
@@ -241,24 +297,31 @@ func (this *ProSe_impl_RoutingTreeMaintenance) doAction0() bool {
 func (this *ProSe_impl_RoutingTreeMaintenance) doAction1() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction1")
+	this.decrementPriority(1)
+	if this.okayToRun(1) {
 
-	var found bool
-	var neighbor *NeighborState
-	for _, neighbor = range this.neighborState {
-		temp2 := this.isNeighborUp(neighbor.id)
-		if (neighbor.state.Dist < this.state.Dist) && (temp2 && (((neighbor.state.Inv + int64(1)) < CMAX) && ((neighbor.state.Inv + int64(1)) < this.state.Inv))) {
-			found = true
-			break
+		log.Debugf("Executing: doAction1")
+
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			temp2 := this.isNeighborUp(neighbor.id)
+			if ((neighbor.state.Dist < this.state.Dist) && (temp2 && (((neighbor.state.Inv + int64(1)) < CMAX) && ((neighbor.state.Inv + int64(1)) < this.state.Inv)))) {
+				found = true
+				break
+			}
 		}
-	}
-	if found {
-		this.state.P = neighbor.id
-		this.state.Inv = (neighbor.state.Inv + int64(1))
-		stateChanged = true
-	}
+		if found {
+			this.state.P = neighbor.id
+			this.state.Inv = (neighbor.state.Inv + int64(1))
+			stateChanged = true
+		}
 
-	log.Debugf("doAction1: state changed: %v", stateChanged)
+		log.Debugf("doAction1: state changed: %v", stateChanged)
+
+		this.resetPriority(1)
+	}
 
 	return stateChanged
 }
@@ -266,27 +329,34 @@ func (this *ProSe_impl_RoutingTreeMaintenance) doAction1() bool {
 func (this *ProSe_impl_RoutingTreeMaintenance) doAction2() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction2")
+	this.decrementPriority(2)
+	if this.okayToRun(2) {
 
-	var found bool
-	var neighbor *NeighborState
-	for _, neighbor = range this.neighborState {
-		temp3 := this.isNeighborUp(this.state.P)
-		if neighbor.id != this.state.P {
-			continue
-		}
-		if (this.state.P != "") && ((temp3 == false) || ((neighbor.state.Inv >= CMAX) || (((neighbor.state.Dist < this.state.Dist) && (this.state.Inv != neighbor.state.Inv)) || ((neighbor.state.Dist > this.state.Dist) && (this.state.Inv != (neighbor.state.Inv + int64(1))))))) {
-			found = true
-			break
-		}
-	}
-	if found {
-		this.state.P = ""
-		this.state.Inv = CMAX
-		stateChanged = true
-	}
+		log.Debugf("Executing: doAction2")
 
-	log.Debugf("doAction2: state changed: %v", stateChanged)
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			temp3 := this.isNeighborUp(this.state.P)
+			if neighbor.id != this.state.P {
+				continue
+			}
+			if ((this.state.P != "") && ((temp3 == false) || ((neighbor.state.Inv >= CMAX) || (((neighbor.state.Dist < this.state.Dist) && (this.state.Inv != neighbor.state.Inv)) || ((neighbor.state.Dist > this.state.Dist) && (this.state.Inv != (neighbor.state.Inv + int64(1)))))))) {
+				found = true
+				break
+			}
+		}
+		if found {
+			this.state.P = ""
+			this.state.Inv = CMAX
+			stateChanged = true
+		}
+
+		log.Debugf("doAction2: state changed: %v", stateChanged)
+
+		this.resetPriority(2)
+	}
 
 	return stateChanged
 }
@@ -294,33 +364,30 @@ func (this *ProSe_impl_RoutingTreeMaintenance) doAction2() bool {
 func (this *ProSe_impl_RoutingTreeMaintenance) doAction3() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction3")
+	this.decrementPriority(3)
+	if this.okayToRun(3) {
 
-	if (this.state.P == "") && (this.state.Inv < CMAX) {
-		this.state.Inv = CMAX
-		stateChanged = true
+		log.Debugf("Executing: doAction3")
+
+		
+		if ((this.state.P == "") && (this.state.Inv < CMAX)) {
+			this.state.Inv = CMAX
+			stateChanged = true
+		}
+
+		log.Debugf("doAction3: state changed: %v", stateChanged)
+
+		this.resetPriority(3)
 	}
-
-	log.Debugf("doAction3: state changed: %v", stateChanged)
 
 	return stateChanged
 }
 
+
 func (this *ProSe_impl_RoutingTreeMaintenance) updateLocalState() bool {
 	stateChanged := false
 
-	statements := []func() bool{
-
-		this.doAction0,
-
-		this.doAction1,
-
-		this.doAction2,
-
-		this.doAction3,
-	}
-
-	for _, stmtFunc := range statements {
+	for _, stmtFunc := range this.guardedStatements {
 		if changed := stmtFunc(); changed {
 			stateChanged = true
 		}
@@ -333,15 +400,15 @@ func (this *ProSe_impl_RoutingTreeMaintenance) broadcastLocalState() (int, error
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
-
-			Dist: this.state.Dist,
-			Inv:  this.state.Inv,
-			P:    this.state.P,
+			
+                Dist: this.state.Dist,
+                Inv: this.state.Inv,
+                P: this.state.P,
 		},
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_StateUpdate,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Upd{updMessage},
 	}
 
@@ -350,12 +417,12 @@ func (this *ProSe_impl_RoutingTreeMaintenance) broadcastLocalState() (int, error
 
 func (this *ProSe_impl_RoutingTreeMaintenance) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
-		Id:     this.id,
+		Id: this.id,
 		SentAt: time.Now().Unix(),
 	}
 	broadcastMessage := &p.BroadcastMessage{
 		Type: p.MessageType_Heartbeat,
-		Src:  this.id,
+		Src: this.id,
 		Msg:  &p.BroadcastMessage_Hb{hbMessage},
 	}
 

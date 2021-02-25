@@ -97,8 +97,9 @@ type VariableSource struct {
 type Statement struct {
 	Pos lexer.Position
 
-	Guard   *Expr     `@@ "-" ">"`
-	Actions []*Action `@@ ";" ( ( @@ ";" )* )?`
+	Priority *int64    `( "<" @Number ">")?`
+	Guard    *Expr     `@@ "-" ">"`
+	Actions  []*Action `@@ ";" ( ( @@ ";" )* )?`
 }
 
 type Action struct {

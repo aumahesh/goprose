@@ -46,12 +46,18 @@ type ProSe_impl_max struct {
 	receiveChannel chan *p.NeighborUpdate
 	hbChannel chan *p.NeighborHeartBeat
 	neighborState map[string]*NeighborState
+	configuredPriority []int
+	runningPriority []int
+	guardedStatements []func() bool
 }
 
 func (this *ProSe_impl_max) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
+	this.configuredPriority = []int{}
+	this.runningPriority = []int{}
+	this.guardedStatements = []func() bool{}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -77,6 +83,13 @@ func (this *ProSe_impl_max) init(id string, mcastAddr string) error {
 	
 
 	this.initState()
+
+	// set priorities for actions
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction0)
+
 
 	return nil
 }
@@ -201,27 +214,49 @@ func (this *ProSe_impl_max) getNeighbor(id string, stateVariable string) (*Neigh
 	return nbr, nil
 }
 
+func (this *ProSe_impl_max) decrementPriority(actionIndex int) {
+	p := this.runningPriority[actionIndex]
+	this.runningPriority[actionIndex] = p-1
+}
+
+func (this *ProSe_impl_max) resetPriority(actionIndex int) {
+	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
+}
+
+func (this *ProSe_impl_max) okayToRun(actionIndex int) bool {
+	if this.runningPriority[actionIndex] == 0 {
+		return true
+	}
+	return false
+}
+
 
 func (this *ProSe_impl_max) doAction0() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction0")
+	this.decrementPriority(0)
+	if this.okayToRun(0) {
 
-	
-	var found bool
-	var neighbor *NeighborState
-	for _, neighbor = range this.neighborState {
-		if (neighbor.state.X > this.state.X) {
-			found = true
-			break
+		log.Debugf("Executing: doAction0")
+
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			if (neighbor.state.X > this.state.X) {
+				found = true
+				break
+			}
 		}
-	}
-	if found {
-		this.state.X = neighbor.state.X
-		stateChanged = true
-	}
+		if found {
+			this.state.X = neighbor.state.X
+			stateChanged = true
+		}
 
-	log.Debugf("doAction0: state changed: %v", stateChanged)
+		log.Debugf("doAction0: state changed: %v", stateChanged)
+
+		this.resetPriority(0)
+	}
 
 	return stateChanged
 }
@@ -230,13 +265,7 @@ func (this *ProSe_impl_max) doAction0() bool {
 func (this *ProSe_impl_max) updateLocalState() bool {
 	stateChanged := false
 
-	statements := []func() bool{
-
-		this.doAction0,
-
-	}
-
-	for _, stmtFunc := range statements {
+	for _, stmtFunc := range this.guardedStatements {
 		if changed := stmtFunc(); changed {
 			stateChanged = true
 		}

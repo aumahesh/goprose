@@ -46,12 +46,18 @@ type ProSe_impl_PursuerEvaderTracking struct {
 	receiveChannel chan *p.NeighborUpdate
 	hbChannel chan *p.NeighborHeartBeat
 	neighborState map[string]*NeighborState
+	configuredPriority []int
+	runningPriority []int
+	guardedStatements []func() bool
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
+	this.configuredPriority = []int{}
+	this.runningPriority = []int{}
+	this.guardedStatements = []func() bool{}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -77,6 +83,21 @@ func (this *ProSe_impl_PursuerEvaderTracking) init(id string, mcastAddr string) 
 	
 
 	this.initState()
+
+	// set priorities for actions
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction0)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction1)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction2)
+
 
 	return nil
 }
@@ -199,20 +220,42 @@ func (this *ProSe_impl_PursuerEvaderTracking) getNeighbor(id string, stateVariab
 	return nbr, nil
 }
 
+func (this *ProSe_impl_PursuerEvaderTracking) decrementPriority(actionIndex int) {
+	p := this.runningPriority[actionIndex]
+	this.runningPriority[actionIndex] = p-1
+}
+
+func (this *ProSe_impl_PursuerEvaderTracking) resetPriority(actionIndex int) {
+	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
+}
+
+func (this *ProSe_impl_PursuerEvaderTracking) okayToRun(actionIndex int) bool {
+	if this.runningPriority[actionIndex] == 0 {
+		return true
+	}
+	return false
+}
+
 
 func (this *ProSe_impl_PursuerEvaderTracking) doAction0() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction0")
+	this.decrementPriority(0)
+	if this.okayToRun(0) {
 
-	
-	if true {
-		temp0 := rand.Int63n(int64(2))
-		this.state.IsEvaderHere = (temp0 == int64(1))
-		stateChanged = true
+		log.Debugf("Executing: doAction0")
+
+		
+		if true {
+			temp0 := rand.Int63n(int64(2))
+			this.state.IsEvaderHere = (temp0 == int64(1))
+			stateChanged = true
+		}
+
+		log.Debugf("doAction0: state changed: %v", stateChanged)
+
+		this.resetPriority(0)
 	}
-
-	log.Debugf("doAction0: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -220,18 +263,24 @@ func (this *ProSe_impl_PursuerEvaderTracking) doAction0() bool {
 func (this *ProSe_impl_PursuerEvaderTracking) doAction1() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction1")
+	this.decrementPriority(1)
+	if this.okayToRun(1) {
 
-	
-	if this.state.IsEvaderHere {
-		this.state.P = this.id
-		this.state.Dist2Evader = int64(0)
-		temp1 := time.Now().Unix()
-		this.state.DetectTimestamp = temp1
-		stateChanged = true
+		log.Debugf("Executing: doAction1")
+
+		
+		if this.state.IsEvaderHere {
+			this.state.P = this.id
+			this.state.Dist2Evader = int64(0)
+			temp1 := time.Now().Unix()
+			this.state.DetectTimestamp = temp1
+			stateChanged = true
+		}
+
+		log.Debugf("doAction1: state changed: %v", stateChanged)
+
+		this.resetPriority(1)
 	}
-
-	log.Debugf("doAction1: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -239,25 +288,31 @@ func (this *ProSe_impl_PursuerEvaderTracking) doAction1() bool {
 func (this *ProSe_impl_PursuerEvaderTracking) doAction2() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction2")
+	this.decrementPriority(2)
+	if this.okayToRun(2) {
 
-	
-	var found bool
-	var neighbor *NeighborState
-	for _, neighbor = range this.neighborState {
-		if ((neighbor.state.DetectTimestamp > this.state.DetectTimestamp) || ((neighbor.state.DetectTimestamp == this.state.DetectTimestamp) && ((neighbor.state.Dist2Evader + int64(1)) < this.state.Dist2Evader))) {
-			found = true
-			break
+		log.Debugf("Executing: doAction2")
+
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			if ((neighbor.state.DetectTimestamp > this.state.DetectTimestamp) || ((neighbor.state.DetectTimestamp == this.state.DetectTimestamp) && ((neighbor.state.Dist2Evader + int64(1)) < this.state.Dist2Evader))) {
+				found = true
+				break
+			}
 		}
-	}
-	if found {
-		this.state.P = neighbor.id
-		this.state.Dist2Evader = (neighbor.state.Dist2Evader + int64(1))
-		this.state.DetectTimestamp = neighbor.state.DetectTimestamp
-		stateChanged = true
-	}
+		if found {
+			this.state.P = neighbor.id
+			this.state.Dist2Evader = (neighbor.state.Dist2Evader + int64(1))
+			this.state.DetectTimestamp = neighbor.state.DetectTimestamp
+			stateChanged = true
+		}
 
-	log.Debugf("doAction2: state changed: %v", stateChanged)
+		log.Debugf("doAction2: state changed: %v", stateChanged)
+
+		this.resetPriority(2)
+	}
 
 	return stateChanged
 }
@@ -266,17 +321,7 @@ func (this *ProSe_impl_PursuerEvaderTracking) doAction2() bool {
 func (this *ProSe_impl_PursuerEvaderTracking) updateLocalState() bool {
 	stateChanged := false
 
-	statements := []func() bool{
-
-		this.doAction0,
-
-		this.doAction1,
-
-		this.doAction2,
-
-	}
-
-	for _, stmtFunc := range statements {
+	for _, stmtFunc := range this.guardedStatements {
 		if changed := stmtFunc(); changed {
 			stateChanged = true
 		}

@@ -1,0 +1,30 @@
+program distanceVector
+
+import "neighborhood"
+
+sensor j
+
+var
+
+public int dis.j;
+public bool up.j;
+public string p.j;
+private int diameter.j;
+
+begin
+
+((p.j != "") && (neighborhood.up(p.j)) && (dis.j != dis.(p.j)+1) && (diameter.j > dis.(p.j)+1)) -> dis.j = dis.(p.j)+1;
+
+|
+
+((dis.j != dis.(p.j)+1) && (diameter.j <= dis.(p.j)+1)) -> dis.j = diameter.j;
+
+|
+
+((p.j != "") && (!neighborhood.up(p.j))) -> p.j = ""; dis.j = diameter.j;
+
+|
+
+((neighborhood.up(k)) && (dis.j > dis.k)) -> p.j = k; dis.j = dis.k + 1;
+
+end

@@ -1,4 +1,4 @@
-// +build example
+// +build TrackingPriority
 
 package internal
 
@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/proto"
 	"github.com/dmichael/go-multicast/multicast"
-	p "aumahesh.com/prose/example/models"
+	p "aumahesh.com/prose/TrackingPriority/models"
 )
 
 const (
@@ -23,9 +23,6 @@ const (
 )
 
 var (
-	
-	
-	a int64 = 0
 	
 )
 
@@ -39,7 +36,7 @@ type NeighborState struct {
 	active bool
 }
 
-type ProSe_impl_example struct {
+type ProSe_impl_TrackingPriority struct {
 	id string
 	state *p.State
 	mcastAddr string
@@ -52,7 +49,7 @@ type ProSe_impl_example struct {
 	guardedStatements []func() bool
 }
 
-func (this *ProSe_impl_example) init(id string, mcastAddr string) error {
+func (this *ProSe_impl_TrackingPriority) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
@@ -81,56 +78,39 @@ func (this *ProSe_impl_example) init(id string, mcastAddr string) error {
 				},
 	}
 
-	a = this.initConstanta()
 	
 
 	this.initState()
 
 	// set priorities for actions
 
+	this.configuredPriority = append(this.configuredPriority, 2)
+	this.runningPriority = append(this.runningPriority, 2)
+	this.guardedStatements = append(this.guardedStatements, this.doAction0)
+
 	this.configuredPriority = append(this.configuredPriority, 1)
 	this.runningPriority = append(this.runningPriority, 1)
-	this.guardedStatements = append(this.guardedStatements, this.doAction0)
+	this.guardedStatements = append(this.guardedStatements, this.doAction1)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction2)
 
 
 	return nil
 }
 
-func (this *ProSe_impl_example) initState() {
-	this.state.Msg = ""
-        this.state.St = 0
-        this.state.Timer = 0
-        this.state.Tmp = false
-        this.state.X = 0
+func (this *ProSe_impl_TrackingPriority) initState() {
+	this.state.Dist2Evader = 0
+        this.state.IsEvaderHere = false
+        this.state.P = ""
+        this.state.TimeStampOfDetection = 0
         
 
-	this.state.Msg = this.initVaribleMsg()
-	this.state.Tmp = this.initVaribleTmp()
-	this.state.X = this.initVaribleX()
 	
 }
 
-func (this *ProSe_impl_example) initConstanta() int64 {
-	
-	return int64(20)
-}
-
-func (this *ProSe_impl_example) initVaribleMsg() string {
-    
-	return "Hello, World!"
-}
-
-func (this *ProSe_impl_example) initVaribleTmp() bool {
-    
-	return true
-}
-
-func (this *ProSe_impl_example) initVaribleX() int64 {
-    
-	return ((- int64(10)) + int64(500))
-}
-
-func (this *ProSe_impl_example) EventHandler(ctx context.Context) {
+func (this *ProSe_impl_TrackingPriority) EventHandler(ctx context.Context) {
 	heartbeatTicker := time.NewTicker(heartbeatInterval)
 	for {
 		select {
@@ -146,11 +126,10 @@ func (this *ProSe_impl_example) EventHandler(ctx context.Context) {
 			}
 			this.neighborState[s.Id].state = &p.State{
 				
-					Msg: s.State.Msg,
-					St: s.State.St,
-					Timer: s.State.Timer,
-					Tmp: s.State.Tmp,
-					X: s.State.X,
+					Dist2Evader: s.State.Dist2Evader,
+					IsEvaderHere: s.State.IsEvaderHere,
+					P: s.State.P,
+					TimeStampOfDetection: s.State.TimeStampOfDetection,
 			}
 			this.neighborState[s.Id].updatedAt = time.Now()
 			this.evaluateNeighborStates()
@@ -193,7 +172,7 @@ func (this *ProSe_impl_example) EventHandler(ctx context.Context) {
 	}
 }
 
-func (this *ProSe_impl_example) evaluateNeighborStates() {
+func (this *ProSe_impl_TrackingPriority) evaluateNeighborStates() {
 	for id, nbr := range this.neighborState {
 		if nbr.updatedAt.Add(inactivityTimeout).Before(time.Now()) {
 			nbr.active = false
@@ -210,7 +189,7 @@ func (this *ProSe_impl_example) evaluateNeighborStates() {
 	}
 }
 
-func (this *ProSe_impl_example) isNeighborUp(id string) bool {
+func (this *ProSe_impl_TrackingPriority) isNeighborUp(id string) bool {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return false
@@ -218,11 +197,11 @@ func (this *ProSe_impl_example) isNeighborUp(id string) bool {
 	return nbr.active
 }
 
-func (this *ProSe_impl_example) neighbors() map[string]*NeighborState {
+func (this *ProSe_impl_TrackingPriority) neighbors() map[string]*NeighborState {
 	return this.neighborState
 }
 
-func (this *ProSe_impl_example) setNeighbor(id string, state bool) bool {
+func (this *ProSe_impl_TrackingPriority) setNeighbor(id string, state bool) bool {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return false
@@ -231,7 +210,7 @@ func (this *ProSe_impl_example) setNeighbor(id string, state bool) bool {
 	return nbr.active
 }
 
-func (this *ProSe_impl_example) getNeighbor(id string, stateVariable string) (*NeighborState, error) {
+func (this *ProSe_impl_TrackingPriority) getNeighbor(id string, stateVariable string) (*NeighborState, error) {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return nil, fmt.Errorf("%s not found in neighbors", id)
@@ -239,16 +218,16 @@ func (this *ProSe_impl_example) getNeighbor(id string, stateVariable string) (*N
 	return nbr, nil
 }
 
-func (this *ProSe_impl_example) decrementPriority(actionIndex int) {
+func (this *ProSe_impl_TrackingPriority) decrementPriority(actionIndex int) {
 	p := this.runningPriority[actionIndex]
 	this.runningPriority[actionIndex] = p-1
 }
 
-func (this *ProSe_impl_example) resetPriority(actionIndex int) {
+func (this *ProSe_impl_TrackingPriority) resetPriority(actionIndex int) {
 	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
 }
 
-func (this *ProSe_impl_example) okayToRun(actionIndex int) bool {
+func (this *ProSe_impl_TrackingPriority) okayToRun(actionIndex int) bool {
 	if this.runningPriority[actionIndex] == 0 {
 		return true
 	}
@@ -256,7 +235,7 @@ func (this *ProSe_impl_example) okayToRun(actionIndex int) bool {
 }
 
 
-func (this *ProSe_impl_example) doAction0() bool {
+func (this *ProSe_impl_TrackingPriority) doAction0() bool {
 	stateChanged := false
 
 	this.decrementPriority(0)
@@ -265,9 +244,11 @@ func (this *ProSe_impl_example) doAction0() bool {
 		log.Debugf("Executing: doAction0")
 
 		
-		if ((! (this.state.St == int64(1))) && (this.state.Timer >= a)) {
-			this.state.St = int64(2)
-			this.state.Timer = int64(10)
+		if this.state.IsEvaderHere {
+			this.state.P = this.id
+			this.state.Dist2Evader = int64(0)
+			temp0 := time.Now().Unix()
+			this.state.TimeStampOfDetection = temp0
 			stateChanged = true
 		}
 
@@ -279,8 +260,72 @@ func (this *ProSe_impl_example) doAction0() bool {
 	return stateChanged
 }
 
+func (this *ProSe_impl_TrackingPriority) doAction1() bool {
+	stateChanged := false
 
-func (this *ProSe_impl_example) updateLocalState() bool {
+	this.decrementPriority(1)
+	if this.okayToRun(1) {
+
+		log.Debugf("Executing: doAction1")
+
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			if (neighbor.state.TimeStampOfDetection > this.state.TimeStampOfDetection) {
+				found = true
+				break
+			}
+		}
+		if found {
+			this.state.P = neighbor.id
+			this.state.TimeStampOfDetection = neighbor.state.TimeStampOfDetection
+			this.state.Dist2Evader = (neighbor.state.Dist2Evader + int64(1))
+			stateChanged = true
+		}
+
+		log.Debugf("doAction1: state changed: %v", stateChanged)
+
+		this.resetPriority(1)
+	}
+
+	return stateChanged
+}
+
+func (this *ProSe_impl_TrackingPriority) doAction2() bool {
+	stateChanged := false
+
+	this.decrementPriority(2)
+	if this.okayToRun(2) {
+
+		log.Debugf("Executing: doAction2")
+
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			if ((neighbor.state.TimeStampOfDetection == this.state.TimeStampOfDetection) && ((neighbor.state.Dist2Evader + int64(1)) < this.state.Dist2Evader)) {
+				found = true
+				break
+			}
+		}
+		if found {
+			this.state.P = neighbor.id
+			this.state.TimeStampOfDetection = neighbor.state.TimeStampOfDetection
+			this.state.Dist2Evader = (neighbor.state.Dist2Evader + int64(1))
+			stateChanged = true
+		}
+
+		log.Debugf("doAction2: state changed: %v", stateChanged)
+
+		this.resetPriority(2)
+	}
+
+	return stateChanged
+}
+
+
+func (this *ProSe_impl_TrackingPriority) updateLocalState() bool {
 	stateChanged := false
 
 	for _, stmtFunc := range this.guardedStatements {
@@ -292,16 +337,15 @@ func (this *ProSe_impl_example) updateLocalState() bool {
 	return stateChanged
 }
 
-func (this *ProSe_impl_example) broadcastLocalState() (int, error) {
+func (this *ProSe_impl_TrackingPriority) broadcastLocalState() (int, error) {
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
 			
-                Msg: this.state.Msg,
-                St: this.state.St,
-                Timer: this.state.Timer,
-                Tmp: this.state.Tmp,
-                X: this.state.X,
+                Dist2Evader: this.state.Dist2Evader,
+                IsEvaderHere: this.state.IsEvaderHere,
+                P: this.state.P,
+                TimeStampOfDetection: this.state.TimeStampOfDetection,
 		},
 	}
 	broadcastMessage := &p.BroadcastMessage{
@@ -313,7 +357,7 @@ func (this *ProSe_impl_example) broadcastLocalState() (int, error) {
 	return this.send(broadcastMessage)
 }
 
-func (this *ProSe_impl_example) sendHeartBeat() (int, error) {
+func (this *ProSe_impl_TrackingPriority) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
 		Id: this.id,
 		SentAt: time.Now().Unix(),
@@ -327,7 +371,7 @@ func (this *ProSe_impl_example) sendHeartBeat() (int, error) {
 	return this.send(broadcastMessage)
 }
 
-func (this *ProSe_impl_example) send(msg *p.BroadcastMessage) (int, error) {
+func (this *ProSe_impl_TrackingPriority) send(msg *p.BroadcastMessage) (int, error) {
 	log.Debugf("Sending: %+v", msg)
 	data, err := proto.Marshal(msg)
 	if err != nil {
@@ -336,7 +380,7 @@ func (this *ProSe_impl_example) send(msg *p.BroadcastMessage) (int, error) {
 	return this.mcastConn.Write(data)
 }
 
-func (this *ProSe_impl_example) msgHandler(src *net.UDPAddr, n int, b []byte) {
+func (this *ProSe_impl_TrackingPriority) msgHandler(src *net.UDPAddr, n int, b []byte) {
 	log.Debugf("received message (%d bytes) from %s", n, src.String())
 	broadcastMessage := &p.BroadcastMessage{}
 	err := proto.Unmarshal(b[:n], broadcastMessage)
@@ -355,7 +399,7 @@ func (this *ProSe_impl_example) msgHandler(src *net.UDPAddr, n int, b []byte) {
 	}
 }
 
-func (this *ProSe_impl_example) Listener(ctx context.Context) {
+func (this *ProSe_impl_TrackingPriority) Listener(ctx context.Context) {
 	addr, err := net.ResolveUDPAddr("udp4", this.mcastAddr)
 	if err != nil {
 		log.Errorf("Error resolving mcast address: %s", err)

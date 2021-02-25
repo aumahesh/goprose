@@ -79,12 +79,18 @@ type ProSe_impl_pCover struct {
 	receiveChannel chan *p.NeighborUpdate
 	hbChannel chan *p.NeighborHeartBeat
 	neighborState map[string]*NeighborState
+	configuredPriority []int
+	runningPriority []int
+	guardedStatements []func() bool
 }
 
 func (this *ProSe_impl_pCover) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
+	this.configuredPriority = []int{}
+	this.runningPriority = []int{}
+	this.guardedStatements = []func() bool{}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -121,6 +127,37 @@ func (this *ProSe_impl_pCover) init(id string, mcastAddr string) error {
 	
 
 	this.initState()
+
+	// set priorities for actions
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction0)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction1)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction2)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction3)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction4)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction5)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction6)
+
 
 	return nil
 }
@@ -294,20 +331,42 @@ func (this *ProSe_impl_pCover) getNeighbor(id string, stateVariable string) (*Ne
 	return nbr, nil
 }
 
+func (this *ProSe_impl_pCover) decrementPriority(actionIndex int) {
+	p := this.runningPriority[actionIndex]
+	this.runningPriority[actionIndex] = p-1
+}
+
+func (this *ProSe_impl_pCover) resetPriority(actionIndex int) {
+	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
+}
+
+func (this *ProSe_impl_pCover) okayToRun(actionIndex int) bool {
+	if this.runningPriority[actionIndex] == 0 {
+		return true
+	}
+	return false
+}
+
 
 func (this *ProSe_impl_pCover) doAction0() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction0")
+	this.decrementPriority(0)
+	if this.okayToRun(0) {
 
-	
-	if ((this.state.St == sleep) && (this.state.Timer >= X)) {
-		this.state.St = probe
-		this.state.Timer = int64(0)
-		stateChanged = true
+		log.Debugf("Executing: doAction0")
+
+		
+		if ((this.state.St == sleep) && (this.state.Timer >= X)) {
+			this.state.St = probe
+			this.state.Timer = int64(0)
+			stateChanged = true
+		}
+
+		log.Debugf("doAction0: state changed: %v", stateChanged)
+
+		this.resetPriority(0)
 	}
-
-	log.Debugf("doAction0: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -315,17 +374,23 @@ func (this *ProSe_impl_pCover) doAction0() bool {
 func (this *ProSe_impl_pCover) doAction1() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction1")
+	this.decrementPriority(1)
+	if this.okayToRun(1) {
 
-	
-	temp0 := rand.Int63n(int64(100))
-	if ((this.state.St == probe) && ((this.state.Timer >= Y) && (temp0 > OnThreshold))) {
-		this.state.St = sleep
-		this.state.Timer = int64(0)
-		stateChanged = true
+		log.Debugf("Executing: doAction1")
+
+		
+		temp0 := rand.Int63n(int64(100))
+		if ((this.state.St == probe) && ((this.state.Timer >= Y) && (temp0 > OnThreshold))) {
+			this.state.St = sleep
+			this.state.Timer = int64(0)
+			stateChanged = true
+		}
+
+		log.Debugf("doAction1: state changed: %v", stateChanged)
+
+		this.resetPriority(1)
 	}
-
-	log.Debugf("doAction1: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -333,18 +398,24 @@ func (this *ProSe_impl_pCover) doAction1() bool {
 func (this *ProSe_impl_pCover) doAction2() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction2")
+	this.decrementPriority(2)
+	if this.okayToRun(2) {
 
-	
-	temp1 := rand.Int63n(int64(100))
-	if ((this.state.St == probe) && ((this.state.Timer >= Y) && (temp1 <= OffThreshold))) {
-		this.state.St = awake
-		temp2 := rand.Int63n(S)
-		this.state.Timer = temp2
-		stateChanged = true
+		log.Debugf("Executing: doAction2")
+
+		
+		temp1 := rand.Int63n(int64(100))
+		if ((this.state.St == probe) && ((this.state.Timer >= Y) && (temp1 <= OffThreshold))) {
+			this.state.St = awake
+			temp2 := rand.Int63n(S)
+			this.state.Timer = temp2
+			stateChanged = true
+		}
+
+		log.Debugf("doAction2: state changed: %v", stateChanged)
+
+		this.resetPriority(2)
 	}
-
-	log.Debugf("doAction2: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -352,16 +423,22 @@ func (this *ProSe_impl_pCover) doAction2() bool {
 func (this *ProSe_impl_pCover) doAction3() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction3")
+	this.decrementPriority(3)
+	if this.okayToRun(3) {
 
-	
-	if ((this.state.St == awake) && (this.state.Timer >= Z)) {
-		this.state.St = readyoff
-		this.state.Timer = int64(0)
-		stateChanged = true
+		log.Debugf("Executing: doAction3")
+
+		
+		if ((this.state.St == awake) && (this.state.Timer >= Z)) {
+			this.state.St = readyoff
+			this.state.Timer = int64(0)
+			stateChanged = true
+		}
+
+		log.Debugf("doAction3: state changed: %v", stateChanged)
+
+		this.resetPriority(3)
 	}
-
-	log.Debugf("doAction3: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -369,17 +446,23 @@ func (this *ProSe_impl_pCover) doAction3() bool {
 func (this *ProSe_impl_pCover) doAction4() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction4")
+	this.decrementPriority(4)
+	if this.okayToRun(4) {
 
-	
-	if ((this.state.St == readyoff) && (this.state.Timer >= W)) {
-		this.state.St = awake
-		temp3 := rand.Int63n(S)
-		this.state.Timer = temp3
-		stateChanged = true
+		log.Debugf("Executing: doAction4")
+
+		
+		if ((this.state.St == readyoff) && (this.state.Timer >= W)) {
+			this.state.St = awake
+			temp3 := rand.Int63n(S)
+			this.state.Timer = temp3
+			stateChanged = true
+		}
+
+		log.Debugf("doAction4: state changed: %v", stateChanged)
+
+		this.resetPriority(4)
 	}
-
-	log.Debugf("doAction4: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -387,17 +470,23 @@ func (this *ProSe_impl_pCover) doAction4() bool {
 func (this *ProSe_impl_pCover) doAction5() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction5")
+	this.decrementPriority(5)
+	if this.okayToRun(5) {
 
-	
-	temp4 := rand.Int63n(int64(100))
-	if ((this.state.St == readyoff) && (temp4 > OffThreshold)) {
-		this.state.St = sleep
-		this.state.Timer = int64(0)
-		stateChanged = true
+		log.Debugf("Executing: doAction5")
+
+		
+		temp4 := rand.Int63n(int64(100))
+		if ((this.state.St == readyoff) && (temp4 > OffThreshold)) {
+			this.state.St = sleep
+			this.state.Timer = int64(0)
+			stateChanged = true
+		}
+
+		log.Debugf("doAction5: state changed: %v", stateChanged)
+
+		this.resetPriority(5)
 	}
-
-	log.Debugf("doAction5: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -405,15 +494,21 @@ func (this *ProSe_impl_pCover) doAction5() bool {
 func (this *ProSe_impl_pCover) doAction6() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction6")
+	this.decrementPriority(6)
+	if this.okayToRun(6) {
 
-	
-	if (((this.state.St == sleep) && (this.state.Timer <= X)) || (((this.state.St == probe) && (this.state.Timer <= Y)) || (((this.state.St == awake) && (this.state.Timer <= Z)) || ((this.state.St == readyoff) && (this.state.Timer <= W))))) {
-		this.state.Timer = (this.state.Timer + int64(1))
-		stateChanged = true
+		log.Debugf("Executing: doAction6")
+
+		
+		if (((this.state.St == sleep) && (this.state.Timer <= X)) || (((this.state.St == probe) && (this.state.Timer <= Y)) || (((this.state.St == awake) && (this.state.Timer <= Z)) || ((this.state.St == readyoff) && (this.state.Timer <= W))))) {
+			this.state.Timer = (this.state.Timer + int64(1))
+			stateChanged = true
+		}
+
+		log.Debugf("doAction6: state changed: %v", stateChanged)
+
+		this.resetPriority(6)
 	}
-
-	log.Debugf("doAction6: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -422,25 +517,7 @@ func (this *ProSe_impl_pCover) doAction6() bool {
 func (this *ProSe_impl_pCover) updateLocalState() bool {
 	stateChanged := false
 
-	statements := []func() bool{
-
-		this.doAction0,
-
-		this.doAction1,
-
-		this.doAction2,
-
-		this.doAction3,
-
-		this.doAction4,
-
-		this.doAction5,
-
-		this.doAction6,
-
-	}
-
-	for _, stmtFunc := range statements {
+	for _, stmtFunc := range this.guardedStatements {
 		if changed := stmtFunc(); changed {
 			stateChanged = true
 		}

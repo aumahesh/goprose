@@ -18,6 +18,8 @@ func TestCompileAndGenerateCode(t *testing.T) {
 		"distributed_reset.prose",
 		"routing.prose",
 		"pursuer_evader.prose",
+		"distance_vector.prose",
+		"pursuer_evader_with_priority.prose",
 	}
 
 	templatesFolder = "../templates"

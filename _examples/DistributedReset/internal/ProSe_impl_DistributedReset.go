@@ -53,12 +53,18 @@ type ProSe_impl_DistributedReset struct {
 	receiveChannel chan *p.NeighborUpdate
 	hbChannel chan *p.NeighborHeartBeat
 	neighborState map[string]*NeighborState
+	configuredPriority []int
+	runningPriority []int
+	guardedStatements []func() bool
 }
 
 func (this *ProSe_impl_DistributedReset) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
+	this.configuredPriority = []int{}
+	this.runningPriority = []int{}
+	this.guardedStatements = []func() bool{}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -87,6 +93,25 @@ func (this *ProSe_impl_DistributedReset) init(id string, mcastAddr string) error
 	
 
 	this.initState()
+
+	// set priorities for actions
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction0)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction1)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction2)
+
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction3)
+
 
 	return nil
 }
@@ -240,20 +265,42 @@ func (this *ProSe_impl_DistributedReset) getNeighbor(id string, stateVariable st
 	return nbr, nil
 }
 
+func (this *ProSe_impl_DistributedReset) decrementPriority(actionIndex int) {
+	p := this.runningPriority[actionIndex]
+	this.runningPriority[actionIndex] = p-1
+}
+
+func (this *ProSe_impl_DistributedReset) resetPriority(actionIndex int) {
+	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
+}
+
+func (this *ProSe_impl_DistributedReset) okayToRun(actionIndex int) bool {
+	if this.runningPriority[actionIndex] == 0 {
+		return true
+	}
+	return false
+}
+
 
 func (this *ProSe_impl_DistributedReset) doAction0() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction0")
+	this.decrementPriority(0)
+	if this.okayToRun(0) {
 
-	
-	if ((this.state.St == initiate) && (this.state.P == this.id)) {
-		this.state.St = reset
-		this.state.Sn = (this.state.Sn + int64(1))
-		stateChanged = true
+		log.Debugf("Executing: doAction0")
+
+		
+		if ((this.state.St == initiate) && (this.state.P == this.id)) {
+			this.state.St = reset
+			this.state.Sn = (this.state.Sn + int64(1))
+			stateChanged = true
+		}
+
+		log.Debugf("doAction0: state changed: %v", stateChanged)
+
+		this.resetPriority(0)
 	}
-
-	log.Debugf("doAction0: state changed: %v", stateChanged)
 
 	return stateChanged
 }
@@ -261,24 +308,30 @@ func (this *ProSe_impl_DistributedReset) doAction0() bool {
 func (this *ProSe_impl_DistributedReset) doAction1() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction1")
+	this.decrementPriority(1)
+	if this.okayToRun(1) {
 
-	
-	var found bool
-	var neighbor *NeighborState
-	for _, neighbor = range this.neighborState {
-		if ((this.state.St != reset) && ((this.state.P == neighbor.id) && ((neighbor.state.St == reset) && ((this.state.Sn + int64(1)) == neighbor.state.Sn)))) {
-			found = true
-			break
+		log.Debugf("Executing: doAction1")
+
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			if ((this.state.St != reset) && ((this.state.P == neighbor.id) && ((neighbor.state.St == reset) && ((this.state.Sn + int64(1)) == neighbor.state.Sn)))) {
+				found = true
+				break
+			}
 		}
-	}
-	if found {
-		this.state.St = reset
-		this.state.Sn = neighbor.state.Sn
-		stateChanged = true
-	}
+		if found {
+			this.state.St = reset
+			this.state.Sn = neighbor.state.Sn
+			stateChanged = true
+		}
 
-	log.Debugf("doAction1: state changed: %v", stateChanged)
+		log.Debugf("doAction1: state changed: %v", stateChanged)
+
+		this.resetPriority(1)
+	}
 
 	return stateChanged
 }
@@ -286,24 +339,30 @@ func (this *ProSe_impl_DistributedReset) doAction1() bool {
 func (this *ProSe_impl_DistributedReset) doAction2() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction2")
+	this.decrementPriority(2)
+	if this.okayToRun(2) {
 
-	
-	temp0 := this.neighbors()
-	temp2 := true
-	for _, neighbor := range temp0 {
-		temp1 := !(neighbor.state.P == this.id)
-		if temp2 && !(temp1 || ((neighbor.state.St != reset) && (this.state.Sn == neighbor.state.Sn))) {
-			temp2 = false
-			break
+		log.Debugf("Executing: doAction2")
+
+		
+		temp0 := this.neighbors()
+		temp2 := true
+		for _, neighbor := range temp0 {
+			temp1 := !(neighbor.state.P == this.id)
+			if temp2 && !(temp1 || ((neighbor.state.St != reset) && (this.state.Sn == neighbor.state.Sn))) {
+				temp2 = false
+				break
+			}
 		}
-	}
-	if ((this.state.St == reset) && temp2) {
-		this.state.St = normal
-		stateChanged = true
-	}
+		if ((this.state.St == reset) && temp2) {
+			this.state.St = normal
+			stateChanged = true
+		}
 
-	log.Debugf("doAction2: state changed: %v", stateChanged)
+		log.Debugf("doAction2: state changed: %v", stateChanged)
+
+		this.resetPriority(2)
+	}
 
 	return stateChanged
 }
@@ -311,26 +370,32 @@ func (this *ProSe_impl_DistributedReset) doAction2() bool {
 func (this *ProSe_impl_DistributedReset) doAction3() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: doAction3")
+	this.decrementPriority(3)
+	if this.okayToRun(3) {
 
-	
-	var found bool
-	var neighbor *NeighborState
-	for _, neighbor = range this.neighborState {
-		temp3 := !((this.state.P == neighbor.id) && (neighbor.state.St != reset))
-		temp4 := !((this.state.P == neighbor.id) && (neighbor.state.St == reset))
-		if (! ((temp3 || ((this.state.St != reset) && (neighbor.state.Sn == this.state.Sn))) && (temp4 || (((this.state.St != reset) && (neighbor.state.Sn == (this.state.Sn + int64(1)))) || (neighbor.state.Sn == this.state.Sn))))) {
-			found = true
-			break
+		log.Debugf("Executing: doAction3")
+
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			temp3 := !((this.state.P == neighbor.id) && (neighbor.state.St != reset))
+			temp4 := !((this.state.P == neighbor.id) && (neighbor.state.St == reset))
+			if (! ((temp3 || ((this.state.St != reset) && (neighbor.state.Sn == this.state.Sn))) && (temp4 || (((this.state.St != reset) && (neighbor.state.Sn == (this.state.Sn + int64(1)))) || (neighbor.state.Sn == this.state.Sn))))) {
+				found = true
+				break
+			}
 		}
-	}
-	if found {
-		this.state.St = neighbor.state.St
-		this.state.Sn = neighbor.state.Sn
-		stateChanged = true
-	}
+		if found {
+			this.state.St = neighbor.state.St
+			this.state.Sn = neighbor.state.Sn
+			stateChanged = true
+		}
 
-	log.Debugf("doAction3: state changed: %v", stateChanged)
+		log.Debugf("doAction3: state changed: %v", stateChanged)
+
+		this.resetPriority(3)
+	}
 
 	return stateChanged
 }
@@ -339,19 +404,7 @@ func (this *ProSe_impl_DistributedReset) doAction3() bool {
 func (this *ProSe_impl_DistributedReset) updateLocalState() bool {
 	stateChanged := false
 
-	statements := []func() bool{
-
-		this.doAction0,
-
-		this.doAction1,
-
-		this.doAction2,
-
-		this.doAction3,
-
-	}
-
-	for _, stmtFunc := range statements {
+	for _, stmtFunc := range this.guardedStatements {
 		if changed := stmtFunc(); changed {
 			stateChanged = true
 		}

@@ -1,0 +1,26 @@
+program TrackingPriority
+import "time"
+
+sensor j
+var
+	public int dist2Evader.j;
+	public int timeStampOfDetection.j;
+	public string p.j;
+	private bool isEvaderHere.j;
+
+begin
+
+<2> (isEvaderHere.j)
+	-> p.j = j; dist2Evader.j = 0; timeStampOfDetection.j = time.Now();
+
+|
+
+<1> (timeStampOfDetection.k > timeStampOfDetection.j)
+	-> p.j = k; timeStampOfDetection.j = timeStampOfDetection.k; dist2Evader.j = dist2Evader.k + 1;
+
+|
+
+<1> (timeStampOfDetection.k == timeStampOfDetection.j) && (dist2Evader.k +1 < dist2Evader.j)
+	-> p.j = k; timeStampOfDetection.j = timeStampOfDetection.k; dist2Evader.j = dist2Evader.k + 1;
+
+end

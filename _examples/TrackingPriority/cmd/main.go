@@ -1,4 +1,4 @@
-// +build RoutingTreeMaintenance
+// +build TrackingPriority
 
 package main
 
@@ -10,7 +10,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/google/uuid"
-	"aumahesh.com/prose/RoutingTreeMaintenance/internal"
+	"aumahesh.com/prose/TrackingPriority/internal"
 )
 
 const (
@@ -23,9 +23,9 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	log.Debugf("%s: Hello, world!", id)
 
-	impl, err := internal.NewProSe_intf_RoutingTreeMaintenance(id, defaultMcastAddress)
+	impl, err := internal.NewProSe_intf_TrackingPriority(id, defaultMcastAddress)
 	if err != nil {
-		log.Errorf("error instantiating ProSe_intf_RoutingTreeMaintenance: %s", err)
+		log.Errorf("error instantiating ProSe_intf_TrackingPriority: %s", err)
 		panic(err)
 	}
 

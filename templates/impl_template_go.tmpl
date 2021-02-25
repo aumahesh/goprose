@@ -52,12 +52,18 @@ type {{.ImplementationName}} struct {
 	receiveChannel chan *p.NeighborUpdate
 	hbChannel chan *p.NeighborHeartBeat
 	neighborState map[string]*NeighborState
+	configuredPriority []int
+	runningPriority []int
+	guardedStatements []func() bool
 }
 
 func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
+	this.configuredPriority = []int{}
+	this.runningPriority = []int{}
+	this.guardedStatements = []func() bool{}
 
 	conn, err := multicast.NewBroadcaster(this.mcastAddr)
 	if err != nil {
@@ -85,6 +91,13 @@ func (this *{{.ImplementationName}}) init(id string, mcastAddr string) error {
 	{{ end }}
 
 	this.initState()
+
+	// set priorities for actions
+{{ range $Name, $Stmt := .Statements }}
+	this.configuredPriority = append(this.configuredPriority, {{$Stmt.Priority}})
+	this.runningPriority = append(this.runningPriority, {{$Stmt.Priority}})
+	this.guardedStatements = append(this.guardedStatements, this.{{$Name}})
+{{ end }}
 
 	return nil
 }
@@ -230,32 +243,50 @@ func (this *{{.ImplementationName}}) getNeighbor(id string, stateVariable string
 	return nbr, nil
 }
 
+func (this *{{$.ImplementationName}}) decrementPriority(actionIndex int) {
+	p := this.runningPriority[actionIndex]
+	this.runningPriority[actionIndex] = p-1
+}
+
+func (this *{{$.ImplementationName}}) resetPriority(actionIndex int) {
+	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
+}
+
+func (this *{{$.ImplementationName}}) okayToRun(actionIndex int) bool {
+	if this.runningPriority[actionIndex] == 0 {
+		return true
+	}
+	return false
+}
+
+{{$count := 0 -}}
 {{ range $Name, $Stmt := .Statements }}
 func (this *{{$.ImplementationName}}) {{$Name}}() bool {
 	stateChanged := false
 
-	log.Debugf("Executing: {{$Name}}")
+	this.decrementPriority({{$count}})
+	if this.okayToRun({{$count}}) {
 
-	{{ range .Code }}
-	{{.}}
-	{{- end }}
+		log.Debugf("Executing: {{$Name}}")
 
-	log.Debugf("{{$Name}}: state changed: %v", stateChanged)
+		{{ range .Code }}
+		{{.}}
+		{{- end }}
+
+		log.Debugf("{{$Name}}: state changed: %v", stateChanged)
+
+		this.resetPriority({{$count}})
+	}
 
 	return stateChanged
 }
+{{ $count = (increment $count) -}}
 {{end }}
 
 func (this *{{.ImplementationName}}) updateLocalState() bool {
 	stateChanged := false
 
-	statements := []func() bool{
-{{ range $Name, $Stmt := .Statements }}
-		this.{{$Name}},
-{{ end }}
-	}
-
-	for _, stmtFunc := range statements {
+	for _, stmtFunc := range this.guardedStatements {
 		if changed := stmtFunc(); changed {
 			stateChanged = true
 		}

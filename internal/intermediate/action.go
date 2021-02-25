@@ -8,20 +8,22 @@ import (
 )
 
 type Action struct {
-	manager   *TempsManager
-	constants map[string]*Variable
-	variables map[string]*Variable
-	sensorId  string
-	Code      []string
+	manager       *TempsManager
+	constants     map[string]*Variable
+	variables     map[string]*Variable
+	variableState map[string]bool
+	sensorId      string
+	Code          []string
 }
 
-func NewAction(act *parser.Action, sensorId string, constants, variables map[string]*Variable, manager *TempsManager) (*Action, error) {
+func NewAction(act *parser.Action, sensorId string, constants, variables map[string]*Variable, vs map[string]bool, manager *TempsManager) (*Action, error) {
 	a := &Action{
-		manager:   manager,
-		constants: constants,
-		variables: variables,
-		sensorId:  sensorId,
-		Code:      []string{},
+		manager:       manager,
+		constants:     constants,
+		variables:     variables,
+		variableState: vs,
+		sensorId:      sensorId,
+		Code:          []string{},
 	}
 
 	if len(act.Variable) != len(act.Expr) {
@@ -30,7 +32,7 @@ func NewAction(act *parser.Action, sensorId string, constants, variables map[str
 	}
 
 	for index, actExpr := range act.Expr {
-		aexpr := NewExpression(actExpr, sensorId, constants, variables, map[string]bool{}, manager)
+		aexpr := NewExpression(actExpr, sensorId, constants, variables, a.variableState, manager)
 		err := aexpr.GenerateCode()
 		if err != nil {
 			return nil, fmt.Errorf("invalid expression @ index %d: %s", index, err)

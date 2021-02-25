@@ -9,13 +9,20 @@ import (
 )
 
 type GuardedStatement struct {
-	Guard  *Expression
-	Action []*Action
-	Code   []string
+	Priority int64
+	Guard    *Expression
+	Action   []*Action
+	Code     []string
 }
 
 func NewStatement(stmt *parser.Statement, sensorId string, constants, variables map[string]*Variable, manager *TempsManager) (*GuardedStatement, error) {
-	s := &GuardedStatement{}
+	s := &GuardedStatement{
+		Priority: 1,
+	}
+
+	if stmt.Priority != nil {
+		s.Priority = Int64Value(stmt.Priority)
+	}
 
 	s.Guard = NewExpression(stmt.Guard, sensorId, constants, variables, map[string]bool{}, manager)
 	etype, err := s.Guard.GetExpressionType()
@@ -42,7 +49,7 @@ func NewStatement(stmt *parser.Statement, sensorId string, constants, variables 
 	}
 
 	for _, stmtAction := range stmt.Actions {
-		action, err := NewAction(stmtAction, sensorId, constants, variables, manager)
+		action, err := NewAction(stmtAction, sensorId, constants, variables, s.Guard.variableState, manager)
 		if err != nil {
 			return nil, err
 		}
