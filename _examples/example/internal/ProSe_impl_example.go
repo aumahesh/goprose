@@ -314,7 +314,6 @@ func (this *ProSe_impl_example) evaluateGuard1() (bool, *NeighborState) {
 		log.Debugf("Evaluating Guard 1")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			temp0, err := this.getNeighbor(neighbor.state.Id)
 			if err != nil {
@@ -322,12 +321,9 @@ func (this *ProSe_impl_example) evaluateGuard1() (bool, *NeighborState) {
 				return false, neighbor
 			}
 			if (temp0.state.St > int64(10)) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)

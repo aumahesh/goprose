@@ -325,15 +325,11 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard2() (bool, *NeighborS
 		log.Debugf("Evaluating Guard 2")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			if ((neighbor.state.DetectTimestamp > this.state.DetectTimestamp) || ((neighbor.state.DetectTimestamp == this.state.DetectTimestamp) && ((neighbor.state.Dist2Evader + int64(1)) < this.state.Dist2Evader))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 2 evaluated to %v", takeAction)

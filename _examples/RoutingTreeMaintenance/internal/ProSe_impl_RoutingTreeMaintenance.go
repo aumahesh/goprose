@@ -279,16 +279,12 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard0() (bool, *Neighbor
 		log.Debugf("Evaluating Guard 0")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			temp1 := this.isNeighborUp(neighbor.id)
 			if ((neighbor.state.Dist < this.state.Dist) && (temp1 && ((neighbor.state.Inv < CMAX) && (neighbor.state.Inv < this.state.Inv)))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 0 evaluated to %v", takeAction)
@@ -326,16 +322,12 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard1() (bool, *Neighbor
 		log.Debugf("Evaluating Guard 1")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			temp2 := this.isNeighborUp(neighbor.id)
 			if ((neighbor.state.Dist < this.state.Dist) && (temp2 && (((neighbor.state.Inv + int64(1)) < CMAX) && ((neighbor.state.Inv + int64(1)) < this.state.Inv)))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)
@@ -373,19 +365,15 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard2() (bool, *Neighbor
 		log.Debugf("Evaluating Guard 2")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			temp3 := this.isNeighborUp(this.state.P)
 			if neighbor.id != this.state.P {
 				continue
 			}
 			if ((this.state.P != "") && ((temp3 == false) || ((neighbor.state.Inv >= CMAX) || (((neighbor.state.Dist < this.state.Dist) && (this.state.Inv != neighbor.state.Inv)) || ((neighbor.state.Dist > this.state.Dist) && (this.state.Inv != (neighbor.state.Inv + int64(1)))))))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 2 evaluated to %v", takeAction)

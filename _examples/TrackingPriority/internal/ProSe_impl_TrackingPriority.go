@@ -290,15 +290,11 @@ func (this *ProSe_impl_TrackingPriority) evaluateGuard1() (bool, *NeighborState)
 		log.Debugf("Evaluating Guard 1")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			if (neighbor.state.TimeStampOfDetection > this.state.TimeStampOfDetection) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)
@@ -337,15 +333,11 @@ func (this *ProSe_impl_TrackingPriority) evaluateGuard2() (bool, *NeighborState)
 		log.Debugf("Evaluating Guard 2")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			if ((neighbor.state.TimeStampOfDetection == this.state.TimeStampOfDetection) && ((neighbor.state.Dist2Evader + int64(1)) < this.state.Dist2Evader)) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 2 evaluated to %v", takeAction)

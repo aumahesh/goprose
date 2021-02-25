@@ -258,19 +258,15 @@ func (this *ProSe_impl_distanceVector) evaluateGuard0() (bool, *NeighborState) {
 		log.Debugf("Evaluating Guard 0")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			temp0 := this.isNeighborUp(this.state.P)
 			if neighbor.id != this.state.P {
 				continue
 			}
 			if ((this.state.P != "") && (temp0 && ((this.state.Dis != (neighbor.state.Dis + int64(1))) && (this.state.Diameter > (neighbor.state.Dis + int64(1)))))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 0 evaluated to %v", takeAction)
@@ -307,18 +303,14 @@ func (this *ProSe_impl_distanceVector) evaluateGuard1() (bool, *NeighborState) {
 		log.Debugf("Evaluating Guard 1")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			if neighbor.id != this.state.P {
 				continue
 			}
 			if ((this.state.Dis != (neighbor.state.Dis + int64(1))) && (this.state.Diameter <= (neighbor.state.Dis + int64(1)))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)
@@ -391,16 +383,12 @@ func (this *ProSe_impl_distanceVector) evaluateGuard3() (bool, *NeighborState) {
 		log.Debugf("Evaluating Guard 3")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			temp2 := this.isNeighborUp(neighbor.id)
 			if (temp2 && (this.state.Dis > neighbor.state.Dis)) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 3 evaluated to %v", takeAction)

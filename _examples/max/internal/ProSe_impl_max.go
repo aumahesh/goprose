@@ -245,15 +245,11 @@ func (this *ProSe_impl_max) evaluateGuard0() (bool, *NeighborState) {
 		log.Debugf("Evaluating Guard 0")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			if (neighbor.state.X > this.state.X) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 0 evaluated to %v", takeAction)

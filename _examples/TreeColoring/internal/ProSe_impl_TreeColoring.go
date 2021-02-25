@@ -299,19 +299,15 @@ func (this *ProSe_impl_TreeColoring) evaluateGuard0() (bool, *NeighborState) {
 		log.Debugf("Evaluating Guard 0")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			temp0 := this.isNeighborUp(this.state.P)
 			if neighbor.id != this.state.P {
 				continue
 			}
 			if ((this.state.Color == green) && ((temp0 == false) || (neighbor.state.Color == red))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 0 evaluated to %v", takeAction)
@@ -392,15 +388,11 @@ func (this *ProSe_impl_TreeColoring) evaluateGuard2() (bool, *NeighborState) {
 		log.Debugf("Evaluating Guard 2")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			if ((this.state.Root < neighbor.state.Root) && ((this.state.Color == green) && (neighbor.state.Color == green))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 2 evaluated to %v", takeAction)

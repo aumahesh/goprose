@@ -40,7 +40,6 @@ func NewStatement(index int, stmt *parser.Statement, sensorId string, constants,
 
 	if etype == ExpressionTypeRemote {
 		s.GuardCode = []string{
-			"var found bool",
 			"for _, neighbor = range this.neighborState {",
 		}
 	}
@@ -67,12 +66,9 @@ func NewStatement(index int, stmt *parser.Statement, sensorId string, constants,
 		}
 		codelines = append(codelines, []string{
 			fmt.Sprintf("\tif %s {", s.Guard.FinalResult),
-			fmt.Sprintf("\t\tfound = true"),
+			fmt.Sprintf("\t\ttakeAction = true"),
 			fmt.Sprintf("\t\tbreak"),
 			fmt.Sprintf("\t}"),
-			"}",
-			"if found {",
-			"\ttakeAction = true",
 			"}",
 		}...)
 	} else {

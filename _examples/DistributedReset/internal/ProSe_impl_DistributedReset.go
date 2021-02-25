@@ -336,15 +336,11 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard1() (bool, *NeighborState)
 		log.Debugf("Evaluating Guard 1")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			if ((this.state.St != reset) && ((this.state.P == neighbor.id) && ((neighbor.state.St == reset) && ((this.state.Sn + int64(1)) == neighbor.state.Sn)))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)
@@ -425,17 +421,13 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard3() (bool, *NeighborState)
 		log.Debugf("Evaluating Guard 3")
 
 		
-		var found bool
 		for _, neighbor = range this.neighborState {
 			temp3 := !((this.state.P == neighbor.id) && (neighbor.state.St != reset))
 			temp4 := !((this.state.P == neighbor.id) && (neighbor.state.St == reset))
 			if (! ((temp3 || ((this.state.St != reset) && (neighbor.state.Sn == this.state.Sn))) && (temp4 || (((this.state.St != reset) && (neighbor.state.Sn == (this.state.Sn + int64(1)))) || (neighbor.state.Sn == this.state.Sn))))) {
-				found = true
+				takeAction = true
 				break
 			}
-		}
-		if found {
-			takeAction = true
 		}
 
 		log.Debugf("Guard 3 evaluated to %v", takeAction)
