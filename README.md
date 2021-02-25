@@ -87,14 +87,14 @@ _examples/RoutingTreeMaintenance
 ├── cmd
 │   └── main.go
 ├── go.mod
-├── go.sum
 ├── internal
-│   ├── RoutingTreeMaintenance_impl.go
-│   └── RoutingTreeMaintenance_intf.go
+│   ├── ProSe_impl_RoutingTreeMaintenance.go
+│   └── ProSe_intf_RoutingTreeMaintenance.go
 └── proto
     └── state.proto
 
-3 directories, 7 files
+3 directories, 6 files
+
 ```
 
 ## Publications
