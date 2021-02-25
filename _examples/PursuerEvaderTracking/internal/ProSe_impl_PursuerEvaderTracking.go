@@ -212,7 +212,7 @@ func (this *ProSe_impl_PursuerEvaderTracking) setNeighbor(id string, state bool)
 	return nbr.active
 }
 
-func (this *ProSe_impl_PursuerEvaderTracking) getNeighbor(id string, stateVariable string) (*NeighborState, error) {
+func (this *ProSe_impl_PursuerEvaderTracking) getNeighbor(id string) (*NeighborState, error) {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return nil, fmt.Errorf("%s not found in neighbors", id)

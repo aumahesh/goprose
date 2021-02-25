@@ -92,12 +92,17 @@ func (this *ProSe_impl_example) init(id string, mcastAddr string) error {
 	this.runningPriority = append(this.runningPriority, 1)
 	this.guardedStatements = append(this.guardedStatements, this.doAction0)
 
+	this.configuredPriority = append(this.configuredPriority, 1)
+	this.runningPriority = append(this.runningPriority, 1)
+	this.guardedStatements = append(this.guardedStatements, this.doAction1)
+
 
 	return nil
 }
 
 func (this *ProSe_impl_example) initState() {
-	this.state.Msg = ""
+	this.state.Id = ""
+        this.state.Msg = ""
         this.state.St = 0
         this.state.Timer = 0
         this.state.Tmp = false
@@ -146,6 +151,7 @@ func (this *ProSe_impl_example) EventHandler(ctx context.Context) {
 			}
 			this.neighborState[s.Id].state = &p.State{
 				
+					Id: s.State.Id,
 					Msg: s.State.Msg,
 					St: s.State.St,
 					Timer: s.State.Timer,
@@ -231,7 +237,7 @@ func (this *ProSe_impl_example) setNeighbor(id string, state bool) bool {
 	return nbr.active
 }
 
-func (this *ProSe_impl_example) getNeighbor(id string, stateVariable string) (*NeighborState, error) {
+func (this *ProSe_impl_example) getNeighbor(id string) (*NeighborState, error) {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return nil, fmt.Errorf("%s not found in neighbors", id)
@@ -279,6 +285,46 @@ func (this *ProSe_impl_example) doAction0() bool {
 	return stateChanged
 }
 
+func (this *ProSe_impl_example) doAction1() bool {
+	stateChanged := false
+
+	this.decrementPriority(1)
+	if this.okayToRun(1) {
+
+		log.Debugf("Executing: doAction1")
+
+		
+		var found bool
+		var neighbor *NeighborState
+		for _, neighbor = range this.neighborState {
+			temp0, err := this.getNeighbor(neighbor.state.Id)
+			if err != nil {
+				log.Errorf("Error finding neighbor")
+				return stateChanged
+			}
+			if (temp0.state.St > int64(10)) {
+				found = true
+				break
+			}
+		}
+		if found {
+			temp1, err := this.getNeighbor(neighbor.state.Id)
+			if err != nil {
+				log.Errorf("Error finding neighbor")
+				return stateChanged
+			}
+			this.state.St = temp1.state.St
+			stateChanged = true
+		}
+
+		log.Debugf("doAction1: state changed: %v", stateChanged)
+
+		this.resetPriority(1)
+	}
+
+	return stateChanged
+}
+
 
 func (this *ProSe_impl_example) updateLocalState() bool {
 	stateChanged := false
@@ -297,6 +343,7 @@ func (this *ProSe_impl_example) broadcastLocalState() (int, error) {
 		Id: this.id,
 		State: &p.State{
 			
+                Id: this.state.Id,
                 Msg: this.state.Msg,
                 St: this.state.St,
                 Timer: this.state.Timer,

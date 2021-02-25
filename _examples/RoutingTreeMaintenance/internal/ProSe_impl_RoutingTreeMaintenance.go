@@ -237,7 +237,7 @@ func (this *ProSe_impl_RoutingTreeMaintenance) setNeighbor(id string, state bool
 	return nbr.active
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) getNeighbor(id string, stateVariable string) (*NeighborState, error) {
+func (this *ProSe_impl_RoutingTreeMaintenance) getNeighbor(id string) (*NeighborState, error) {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return nil, fmt.Errorf("%s not found in neighbors", id)
@@ -339,6 +339,18 @@ func (this *ProSe_impl_RoutingTreeMaintenance) doAction2() bool {
 		var neighbor *NeighborState
 		for _, neighbor = range this.neighborState {
 			temp3 := this.isNeighborUp(this.state.P)
+			if neighbor.id != this.state.P {
+				continue
+			}
+			if neighbor.id != this.state.P {
+				continue
+			}
+			if neighbor.id != this.state.P {
+				continue
+			}
+			if neighbor.id != this.state.P {
+				continue
+			}
 			if neighbor.id != this.state.P {
 				continue
 			}

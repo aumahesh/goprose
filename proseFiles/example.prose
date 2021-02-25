@@ -13,13 +13,14 @@ private bool tmp.j = true;
 string msg.j = "Hello, World!";
 public int st.j; // 1- sleep, 2- probe, 3- awake, 4- readyoff
 private int timer.j;
+public string id.j;
 
 begin
 
 !(st.j == 1) && (timer.j >= a) -> st.j = 2; timer.j = 10;
 
-//|
+|
 
-//(!(tmp.j => (x.j == 50))) -> msg.j = "Implied";
+(st.(id.k) > 10) -> st.j = st.(id.k);
 
 end

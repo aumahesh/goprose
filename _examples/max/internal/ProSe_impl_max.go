@@ -206,7 +206,7 @@ func (this *ProSe_impl_max) setNeighbor(id string, state bool) bool {
 	return nbr.active
 }
 
-func (this *ProSe_impl_max) getNeighbor(id string, stateVariable string) (*NeighborState, error) {
+func (this *ProSe_impl_max) getNeighbor(id string) (*NeighborState, error) {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return nil, fmt.Errorf("%s not found in neighbors", id)

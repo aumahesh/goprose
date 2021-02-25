@@ -601,7 +601,8 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 		}
 		vvsrc := StringValue(src.VariableSource)
 		if vvsrc == e.sensorId {
-			checkAdded, alreadyFound := e.variableState[vv.Name]
+			vsName := fmt.Sprintf("%s.%s", vv.Name, vvsrc)
+			checkAdded, alreadyFound := e.variableState[vsName]
 			if !alreadyFound || !checkAdded {
 				code := []string{
 					fmt.Sprintf(`if neighbor.id != this.state.%s {`, util.ToCamelCase(vv.Name)),
@@ -613,7 +614,18 @@ func (e *Expression) VariableAssignment(variable *parser.Variable) (string, erro
 			}
 			return fmt.Sprintf("neighbor.state.%s", util.ToCamelCase(v.Name)), nil
 		} else {
-			// TODO
+			vtemp := e.manager.NewTempVariable("unknown")
+			code := []string{
+				fmt.Sprintf("%s, err := this.getNeighbor(neighbor.state.%s)", vtemp, util.ToCamelCase(vv.Name)),
+				fmt.Sprintf("if err != nil {"),
+				fmt.Sprintf("\tlog.Errorf(\"Error finding neighbor\")"),
+				fmt.Sprintf("\treturn stateChanged"),
+				fmt.Sprintf("}"),
+			}
+			e.Code = append(e.Code, code...)
+			e.Temps = append(e.Temps, vtemp)
+			e.variableState[vv.Name] = true
+			return fmt.Sprintf("%s.state.%s", vtemp, util.ToCamelCase(v.Name)), nil
 		}
 	}
 	return "", fmt.Errorf("invalid code sequence")
