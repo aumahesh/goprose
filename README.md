@@ -35,6 +35,10 @@ the form:
 The guard of each action is a predicate over the program variables. The
 statement of each action atomically updates zero or more program variables.
 
+As defined in [4], guards of all commands are evaluated first. Then, from the
+subset of all commands where the guards evaluated to true, one command is 
+randomly picked and the corresponding action is executed.
+
 ## Example ProSe Program
 
 Here is an example program written in guarded commands. This is a routing
@@ -108,7 +112,8 @@ _examples/RoutingTreeMaintenance
 
 ## References
 
-1. Parallel Program Design: A Foundation. K. M. Chandy and J. Misra, 1988
-2. A Discipline of Programming, E. W. Dijkstra, 1997.
-3. Stabilization of grid routing in sensor networks. Y-R. Choi, M. G. Gouda, H. Zhang, and A. Arora.
+1. [Parallel Program Design: A Foundation](https://www.amazon.com/Parallel-Program-Design-Mani-Chandy/dp/0201058669). K. M. Chandy and J. Misra, Addison-Wesley, November 1988.
+2. [A Discipline of Programming](https://www.amazon.com/Discipline-Programming-Edsger-W-Dijkstra/dp/013215871X), E. W. Dijkstra, Prentice Hall, 1997.
+3. [Stabilization of grid routing in sensor networks](https://arc.aiaa.org/doi/10.2514/1.20102). Y-R. Choi, M. G. Gouda, H. Zhang, and A. Arora.
    AIAA Journal of Aerospace Computing, Information, and Communication (JACIC), 2006.
+4. [Guarded Command](https://dl.acm.org/doi/pdf/10.5555/1074100.1074433). Jerrold L. Wagener. Encylopedia of Computer Science, January 2003.
