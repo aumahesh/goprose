@@ -52,6 +52,18 @@ binop			::= "+" | "-" | "*" | "/" | "%"
 				 |  "&&" | "||"
 */
 
+/*
+	Dijkstra's Grammar for Guarded Commands
+
+	guarded_command			::= guard -> guarded_list
+	guard					::= expression
+	guarded_list			::= (statement ;)+
+	guarded_command_set 	::= guarded_command (| guarded_command)*
+	alternative_construct	::= if guarded_command_set fi
+	repetitive_construct	::= do guarded_command_set od
+	statement				::= alternative_construct | repetitive_construct | expression
+*/
+
 type Program struct {
 	Pos lexer.Position
 
@@ -93,6 +105,10 @@ type VariableSource struct {
 	Source         *string `@Ident`
 	VariableId     *string `| ( "(" @Ident`
 	VariableSource *string `"." @Ident ")" )?`
+}
+
+type AlternativeConstruct struct {
+	Pos lexer.Position
 }
 
 type Statement struct {

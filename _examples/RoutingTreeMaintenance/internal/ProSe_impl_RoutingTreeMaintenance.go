@@ -262,17 +262,22 @@ func (this *ProSe_impl_RoutingTreeMaintenance) getNeighbor(id string) (*Neighbor
 	return nbr, nil
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) decrementPriority(actionIndex int) {
+func (this *ProSe_impl_RoutingTreeMaintenance) currentPriority(actionIndex int) int {
+	return this.runningPriority[actionIndex]
+}
+
+func (this *ProSe_impl_RoutingTreeMaintenance) decrementPriority(actionIndex int) int {
 	p := this.runningPriority[actionIndex]
 	this.runningPriority[actionIndex] = p-1
+	return this.runningPriority[actionIndex]
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) resetPriority(actionIndex int) {
 	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
 }
 
-func (this *ProSe_impl_RoutingTreeMaintenance) okayToRun(actionIndex int) bool {
-	if this.runningPriority[actionIndex] == 0 {
+func (this *ProSe_impl_RoutingTreeMaintenance) okayToRun(p int) bool {
+	if p == 0 {
 		return true
 	}
 	return false
@@ -286,8 +291,8 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard0() (bool, *Neighbor
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(0)
-	if this.okayToRun(0) {
+	p := this.currentPriority(0)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 0")
 
 		
@@ -300,24 +305,29 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard0() (bool, *Neighbor
 		}
 
 		log.Debugf("Guard 0 evaluated to %v", takeAction)
-		this.resetPriority(0)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 0")
+	p := this.decrementPriority(0)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 0")
 
-	
-	if neighbor == nil {
-		log.Errorf("invalid neighbor, nil received")
-		return false, nil
+		
+		if neighbor == nil {
+			log.Errorf("invalid neighbor, nil received")
+			return false, nil
+		}
+		this.state.P = neighbor.id
+		this.state.Inv = neighbor.state.Inv
+
+		log.Debugf("Action 0 executed")
+
+		this.resetPriority(0)
+
 	}
-	this.state.P = neighbor.id
-	this.state.Inv = neighbor.state.Inv
-
-	log.Debugf("Action 0 executed")
 
 	return true, neighbor
 }
@@ -329,8 +339,8 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard1() (bool, *Neighbor
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(1)
-	if this.okayToRun(1) {
+	p := this.currentPriority(1)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 1")
 
 		
@@ -343,24 +353,29 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard1() (bool, *Neighbor
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)
-		this.resetPriority(1)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 1")
+	p := this.decrementPriority(1)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 1")
 
-	
-	if neighbor == nil {
-		log.Errorf("invalid neighbor, nil received")
-		return false, nil
+		
+		if neighbor == nil {
+			log.Errorf("invalid neighbor, nil received")
+			return false, nil
+		}
+		this.state.P = neighbor.id
+		this.state.Inv = (neighbor.state.Inv + int64(1))
+
+		log.Debugf("Action 1 executed")
+
+		this.resetPriority(1)
+
 	}
-	this.state.P = neighbor.id
-	this.state.Inv = (neighbor.state.Inv + int64(1))
-
-	log.Debugf("Action 1 executed")
 
 	return true, neighbor
 }
@@ -372,8 +387,8 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard2() (bool, *Neighbor
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(2)
-	if this.okayToRun(2) {
+	p := this.currentPriority(2)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 2")
 
 		
@@ -389,24 +404,29 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard2() (bool, *Neighbor
 		}
 
 		log.Debugf("Guard 2 evaluated to %v", takeAction)
-		this.resetPriority(2)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) executeAction2(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 2")
+	p := this.decrementPriority(2)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 2")
 
-	
-	if neighbor == nil {
-		log.Errorf("invalid neighbor, nil received")
-		return false, nil
+		
+		if neighbor == nil {
+			log.Errorf("invalid neighbor, nil received")
+			return false, nil
+		}
+		this.state.P = ""
+		this.state.Inv = CMAX
+
+		log.Debugf("Action 2 executed")
+
+		this.resetPriority(2)
+
 	}
-	this.state.P = ""
-	this.state.Inv = CMAX
-
-	log.Debugf("Action 2 executed")
 
 	return true, neighbor
 }
@@ -418,8 +438,8 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard3() (bool, *Neighbor
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(3)
-	if this.okayToRun(3) {
+	p := this.currentPriority(3)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 3")
 
 		
@@ -428,19 +448,24 @@ func (this *ProSe_impl_RoutingTreeMaintenance) evaluateGuard3() (bool, *Neighbor
 		}
 
 		log.Debugf("Guard 3 evaluated to %v", takeAction)
-		this.resetPriority(3)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_RoutingTreeMaintenance) executeAction3(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 3")
+	p := this.decrementPriority(3)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 3")
 
-	
-	this.state.Inv = CMAX
+		
+		this.state.Inv = CMAX
 
-	log.Debugf("Action 3 executed")
+		log.Debugf("Action 3 executed")
+
+		this.resetPriority(3)
+
+	}
 
 	return true, neighbor
 }

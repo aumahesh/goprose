@@ -351,17 +351,22 @@ func (this *ProSe_impl_pCover) getNeighbor(id string) (*NeighborState, error) {
 	return nbr, nil
 }
 
-func (this *ProSe_impl_pCover) decrementPriority(actionIndex int) {
+func (this *ProSe_impl_pCover) currentPriority(actionIndex int) int {
+	return this.runningPriority[actionIndex]
+}
+
+func (this *ProSe_impl_pCover) decrementPriority(actionIndex int) int {
 	p := this.runningPriority[actionIndex]
 	this.runningPriority[actionIndex] = p-1
+	return this.runningPriority[actionIndex]
 }
 
 func (this *ProSe_impl_pCover) resetPriority(actionIndex int) {
 	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
 }
 
-func (this *ProSe_impl_pCover) okayToRun(actionIndex int) bool {
-	if this.runningPriority[actionIndex] == 0 {
+func (this *ProSe_impl_pCover) okayToRun(p int) bool {
+	if p == 0 {
 		return true
 	}
 	return false
@@ -375,8 +380,8 @@ func (this *ProSe_impl_pCover) evaluateGuard0() (bool, *NeighborState) {
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(0)
-	if this.okayToRun(0) {
+	p := this.currentPriority(0)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 0")
 
 		
@@ -385,20 +390,25 @@ func (this *ProSe_impl_pCover) evaluateGuard0() (bool, *NeighborState) {
 		}
 
 		log.Debugf("Guard 0 evaluated to %v", takeAction)
-		this.resetPriority(0)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_pCover) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 0")
+	p := this.decrementPriority(0)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 0")
 
-	
-	this.state.St = probe
-	this.state.Timer = int64(0)
+		
+		this.state.St = probe
+		this.state.Timer = int64(0)
 
-	log.Debugf("Action 0 executed")
+		log.Debugf("Action 0 executed")
+
+		this.resetPriority(0)
+
+	}
 
 	return true, neighbor
 }
@@ -410,8 +420,8 @@ func (this *ProSe_impl_pCover) evaluateGuard1() (bool, *NeighborState) {
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(1)
-	if this.okayToRun(1) {
+	p := this.currentPriority(1)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 1")
 
 		
@@ -421,20 +431,25 @@ func (this *ProSe_impl_pCover) evaluateGuard1() (bool, *NeighborState) {
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)
-		this.resetPriority(1)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_pCover) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 1")
+	p := this.decrementPriority(1)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 1")
 
-	
-	this.state.St = sleep
-	this.state.Timer = int64(0)
+		
+		this.state.St = sleep
+		this.state.Timer = int64(0)
 
-	log.Debugf("Action 1 executed")
+		log.Debugf("Action 1 executed")
+
+		this.resetPriority(1)
+
+	}
 
 	return true, neighbor
 }
@@ -446,8 +461,8 @@ func (this *ProSe_impl_pCover) evaluateGuard2() (bool, *NeighborState) {
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(2)
-	if this.okayToRun(2) {
+	p := this.currentPriority(2)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 2")
 
 		
@@ -457,21 +472,26 @@ func (this *ProSe_impl_pCover) evaluateGuard2() (bool, *NeighborState) {
 		}
 
 		log.Debugf("Guard 2 evaluated to %v", takeAction)
-		this.resetPriority(2)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_pCover) executeAction2(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 2")
+	p := this.decrementPriority(2)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 2")
 
-	
-	this.state.St = awake
-	temp2 := rand.Int63n(S)
-	this.state.Timer = temp2
+		
+		this.state.St = awake
+		temp2 := rand.Int63n(S)
+		this.state.Timer = temp2
 
-	log.Debugf("Action 2 executed")
+		log.Debugf("Action 2 executed")
+
+		this.resetPriority(2)
+
+	}
 
 	return true, neighbor
 }
@@ -483,8 +503,8 @@ func (this *ProSe_impl_pCover) evaluateGuard3() (bool, *NeighborState) {
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(3)
-	if this.okayToRun(3) {
+	p := this.currentPriority(3)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 3")
 
 		
@@ -493,20 +513,25 @@ func (this *ProSe_impl_pCover) evaluateGuard3() (bool, *NeighborState) {
 		}
 
 		log.Debugf("Guard 3 evaluated to %v", takeAction)
-		this.resetPriority(3)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_pCover) executeAction3(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 3")
+	p := this.decrementPriority(3)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 3")
 
-	
-	this.state.St = readyoff
-	this.state.Timer = int64(0)
+		
+		this.state.St = readyoff
+		this.state.Timer = int64(0)
 
-	log.Debugf("Action 3 executed")
+		log.Debugf("Action 3 executed")
+
+		this.resetPriority(3)
+
+	}
 
 	return true, neighbor
 }
@@ -518,8 +543,8 @@ func (this *ProSe_impl_pCover) evaluateGuard4() (bool, *NeighborState) {
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(4)
-	if this.okayToRun(4) {
+	p := this.currentPriority(4)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 4")
 
 		
@@ -528,21 +553,26 @@ func (this *ProSe_impl_pCover) evaluateGuard4() (bool, *NeighborState) {
 		}
 
 		log.Debugf("Guard 4 evaluated to %v", takeAction)
-		this.resetPriority(4)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_pCover) executeAction4(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 4")
+	p := this.decrementPriority(4)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 4")
 
-	
-	this.state.St = awake
-	temp3 := rand.Int63n(S)
-	this.state.Timer = temp3
+		
+		this.state.St = awake
+		temp3 := rand.Int63n(S)
+		this.state.Timer = temp3
 
-	log.Debugf("Action 4 executed")
+		log.Debugf("Action 4 executed")
+
+		this.resetPriority(4)
+
+	}
 
 	return true, neighbor
 }
@@ -554,8 +584,8 @@ func (this *ProSe_impl_pCover) evaluateGuard5() (bool, *NeighborState) {
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(5)
-	if this.okayToRun(5) {
+	p := this.currentPriority(5)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 5")
 
 		
@@ -565,20 +595,25 @@ func (this *ProSe_impl_pCover) evaluateGuard5() (bool, *NeighborState) {
 		}
 
 		log.Debugf("Guard 5 evaluated to %v", takeAction)
-		this.resetPriority(5)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_pCover) executeAction5(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 5")
+	p := this.decrementPriority(5)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 5")
 
-	
-	this.state.St = sleep
-	this.state.Timer = int64(0)
+		
+		this.state.St = sleep
+		this.state.Timer = int64(0)
 
-	log.Debugf("Action 5 executed")
+		log.Debugf("Action 5 executed")
+
+		this.resetPriority(5)
+
+	}
 
 	return true, neighbor
 }
@@ -590,8 +625,8 @@ func (this *ProSe_impl_pCover) evaluateGuard6() (bool, *NeighborState) {
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(6)
-	if this.okayToRun(6) {
+	p := this.currentPriority(6)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 6")
 
 		
@@ -600,19 +635,24 @@ func (this *ProSe_impl_pCover) evaluateGuard6() (bool, *NeighborState) {
 		}
 
 		log.Debugf("Guard 6 evaluated to %v", takeAction)
-		this.resetPriority(6)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_pCover) executeAction6(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 6")
+	p := this.decrementPriority(6)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 6")
 
-	
-	this.state.Timer = (this.state.Timer + int64(1))
+		
+		this.state.Timer = (this.state.Timer + int64(1))
 
-	log.Debugf("Action 6 executed")
+		log.Debugf("Action 6 executed")
+
+		this.resetPriority(6)
+
+	}
 
 	return true, neighbor
 }

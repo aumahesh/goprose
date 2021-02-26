@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/google/uuid"
 	"aumahesh.com/prose/TrackingPriority/internal"
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
