@@ -284,17 +284,22 @@ func (this *ProSe_impl_DistributedReset) getNeighbor(id string) (*NeighborState,
 	return nbr, nil
 }
 
-func (this *ProSe_impl_DistributedReset) decrementPriority(actionIndex int) {
+func (this *ProSe_impl_DistributedReset) currentPriority(actionIndex int) int {
+	return this.runningPriority[actionIndex]
+}
+
+func (this *ProSe_impl_DistributedReset) decrementPriority(actionIndex int) int {
 	p := this.runningPriority[actionIndex]
 	this.runningPriority[actionIndex] = p-1
+	return this.runningPriority[actionIndex]
 }
 
 func (this *ProSe_impl_DistributedReset) resetPriority(actionIndex int) {
 	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
 }
 
-func (this *ProSe_impl_DistributedReset) okayToRun(actionIndex int) bool {
-	if this.runningPriority[actionIndex] == 0 {
+func (this *ProSe_impl_DistributedReset) okayToRun(p int) bool {
+	if p == 0 {
 		return true
 	}
 	return false
@@ -308,8 +313,8 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard0() (bool, *NeighborState)
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(0)
-	if this.okayToRun(0) {
+	p := this.currentPriority(0)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 0")
 
 		
@@ -318,20 +323,25 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard0() (bool, *NeighborState)
 		}
 
 		log.Debugf("Guard 0 evaluated to %v", takeAction)
-		this.resetPriority(0)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_DistributedReset) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 0")
+	p := this.decrementPriority(0)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 0")
 
-	
-	this.state.St = reset
-	this.state.Sn = (this.state.Sn + int64(1))
+		
+		this.state.St = reset
+		this.state.Sn = (this.state.Sn + int64(1))
 
-	log.Debugf("Action 0 executed")
+		log.Debugf("Action 0 executed")
+
+		this.resetPriority(0)
+
+	}
 
 	return true, neighbor
 }
@@ -343,8 +353,8 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard1() (bool, *NeighborState)
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(1)
-	if this.okayToRun(1) {
+	p := this.currentPriority(1)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 1")
 
 		
@@ -356,24 +366,29 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard1() (bool, *NeighborState)
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)
-		this.resetPriority(1)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_DistributedReset) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 1")
+	p := this.decrementPriority(1)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 1")
 
-	
-	if neighbor == nil {
-		log.Errorf("invalid neighbor, nil received")
-		return false, nil
+		
+		if neighbor == nil {
+			log.Errorf("invalid neighbor, nil received")
+			return false, nil
+		}
+		this.state.St = reset
+		this.state.Sn = neighbor.state.Sn
+
+		log.Debugf("Action 1 executed")
+
+		this.resetPriority(1)
+
 	}
-	this.state.St = reset
-	this.state.Sn = neighbor.state.Sn
-
-	log.Debugf("Action 1 executed")
 
 	return true, neighbor
 }
@@ -385,8 +400,8 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard2() (bool, *NeighborState)
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(2)
-	if this.okayToRun(2) {
+	p := this.currentPriority(2)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 2")
 
 		
@@ -404,19 +419,24 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard2() (bool, *NeighborState)
 		}
 
 		log.Debugf("Guard 2 evaluated to %v", takeAction)
-		this.resetPriority(2)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_DistributedReset) executeAction2(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 2")
+	p := this.decrementPriority(2)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 2")
 
-	
-	this.state.St = normal
+		
+		this.state.St = normal
 
-	log.Debugf("Action 2 executed")
+		log.Debugf("Action 2 executed")
+
+		this.resetPriority(2)
+
+	}
 
 	return true, neighbor
 }
@@ -428,8 +448,8 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard3() (bool, *NeighborState)
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(3)
-	if this.okayToRun(3) {
+	p := this.currentPriority(3)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 3")
 
 		
@@ -443,24 +463,29 @@ func (this *ProSe_impl_DistributedReset) evaluateGuard3() (bool, *NeighborState)
 		}
 
 		log.Debugf("Guard 3 evaluated to %v", takeAction)
-		this.resetPriority(3)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_DistributedReset) executeAction3(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 3")
+	p := this.decrementPriority(3)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 3")
 
-	
-	if neighbor == nil {
-		log.Errorf("invalid neighbor, nil received")
-		return false, nil
+		
+		if neighbor == nil {
+			log.Errorf("invalid neighbor, nil received")
+			return false, nil
+		}
+		this.state.St = neighbor.state.St
+		this.state.Sn = neighbor.state.Sn
+
+		log.Debugf("Action 3 executed")
+
+		this.resetPriority(3)
+
 	}
-	this.state.St = neighbor.state.St
-	this.state.Sn = neighbor.state.Sn
-
-	log.Debugf("Action 3 executed")
 
 	return true, neighbor
 }

@@ -19,4 +19,3 @@ func NewProSe_intf_TrackingPriority(id string, mcast string) (ProSe_intf_Trackin
 	}
 	return x, nil
 }
-
