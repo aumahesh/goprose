@@ -1,4 +1,4 @@
-// +build TrackingPriority
+// +build dijkstra_gcl
 
 package main
 
@@ -10,7 +10,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/google/uuid"
-	"aumahesh.com/prose/TrackingPriority/internal"
+	"aumahesh.com/prose/dijkstra_gcl/internal"
 )
 
 const (
@@ -23,9 +23,9 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	log.Debugf("%s: Hello, world!", id)
 
-	impl, err := internal.NewProSe_intf_TrackingPriority(id, defaultMcastAddress)
+	impl, err := internal.NewProSe_intf_dijkstra_gcl(id, defaultMcastAddress)
 	if err != nil {
-		log.Errorf("error instantiating ProSe_intf_TrackingPriority: %s", err)
+		log.Errorf("error instantiating ProSe_intf_dijkstra_gcl: %s", err)
 		panic(err)
 	}
 

@@ -1,0 +1,19 @@
+// Dijkstra's GCL example: compute GCD using if...fi within the action body.
+// Each node holds two positive integers and repeatedly reduces them until equal.
+
+program dijkstra_gcl
+
+sensor j
+
+var
+    public int x.j = 42;
+    public int y.j = 18;
+
+begin
+
+    (x.j != y.j) ->
+        if x.j > y.j -> x.j = x.j - y.j;
+        | y.j > x.j -> y.j = y.j - x.j;
+        fi;
+
+end

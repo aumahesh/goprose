@@ -107,16 +107,44 @@ type VariableSource struct {
 	VariableSource *string `"." @Ident ")" )?`
 }
 
+// GuardedCommand represents a single guarded command: guard -> (action ;)+
+type GuardedCommand struct {
+	Pos lexer.Position
+
+	Guard   *Expr        `@@ "-" ">"`
+	Actions []*GclAction `@@ ";" ( ( @@ ";" )* )?`
+}
+
+// GclAction is a single action in a guarded command: either an assignment,
+// an alternative construct (if...fi), or a repetitive construct (do...od).
+type GclAction struct {
+	Pos lexer.Position
+
+	AlternativeConstruct *AlternativeConstruct `  @@`
+	RepetitiveConstruct  *RepetitiveConstruct  `| @@`
+	Assignment           *Action               `| @@`
+}
+
+// AlternativeConstruct: if gc (| gc)* fi
 type AlternativeConstruct struct {
 	Pos lexer.Position
+
+	Commands []*GuardedCommand `"if" @@ ( ( "|" @@ )* )? "fi"`
+}
+
+// RepetitiveConstruct: do gc (| gc)* od
+type RepetitiveConstruct struct {
+	Pos lexer.Position
+
+	Commands []*GuardedCommand `"do" @@ ( ( "|" @@ )* )? "od"`
 }
 
 type Statement struct {
 	Pos lexer.Position
 
-	Priority *int64    `( "<" @Number ">")?`
-	Guard    *Expr     `@@ "-" ">"`
-	Actions  []*Action `@@ ";" ( ( @@ ";" )* )?`
+	Priority *int64       `( "<" @Number ">")?`
+	Guard    *Expr        `@@ "-" ">"`
+	Actions  []*GclAction `@@ ";" ( ( @@ ";" )* )?`
 }
 
 type Action struct {

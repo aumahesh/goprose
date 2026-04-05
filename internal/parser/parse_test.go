@@ -19,6 +19,8 @@ func TestProSeParser_Parse(t *testing.T) {
 		"distributed_reset.prose",
 		"routing.prose",
 		"pursuer_evader.prose",
+		"dijkstra_gcl.prose",
+		"dijkstra_gcl_do.prose",
 	}
 
 	for _, pf := range proseFiles {

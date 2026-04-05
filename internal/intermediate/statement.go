@@ -52,7 +52,7 @@ func NewStatement(index int, stmt *parser.Statement, sensorId string, constants,
 	}
 
 	for _, stmtAction := range stmt.Actions {
-		action, err := NewAction(stmtAction, sensorId, constants, variables, s.Guard.variableState, manager)
+		action, err := NewGclAction(stmtAction, sensorId, constants, variables, s.Guard.variableState, manager)
 		if err != nil {
 			return nil, err
 		}
