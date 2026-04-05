@@ -52,6 +52,18 @@ binop			::= "+" | "-" | "*" | "/" | "%"
 				 |  "&&" | "||"
 */
 
+/*
+	Dijkstra's Grammar for Guarded Commands
+
+	guarded_command			::= guard -> guarded_list
+	guard					::= expression
+	guarded_list			::= (statement ;)+
+	guarded_command_set 	::= guarded_command (| guarded_command)*
+	alternative_construct	::= if guarded_command_set fi
+	repetitive_construct	::= do guarded_command_set od
+	statement				::= alternative_construct | repetitive_construct | expression
+*/
+
 type Program struct {
 	Pos lexer.Position
 
@@ -95,12 +107,56 @@ type VariableSource struct {
 	VariableSource *string `"." @Ident ")" )?`
 }
 
+// GuardedCommand represents a single guarded command: guard -> (action ;)+
+type GuardedCommand struct {
+	Pos lexer.Position
+
+	Guard   *Expr        `@@ "-" ">"`
+	Actions []*GclAction `@@ ";" ( ( @@ ";" )* )?`
+}
+
+// GclAction is a single action in a guarded command: either an assignment,
+// an alternative construct (if...fi), or a repetitive construct (do...od).
+type GclAction struct {
+	Pos lexer.Position
+
+	AlternativeConstruct *AlternativeConstruct `  @@`
+	RepetitiveConstruct  *RepetitiveConstruct  `| @@`
+	Assignment           *Action               `| @@`
+}
+
+// AlternativeConstruct: if gc (| gc)* fi
+type AlternativeConstruct struct {
+	Pos lexer.Position
+
+	Commands []*GuardedCommand `"if" @@ ( ( "|" @@ )* )? "fi"`
+}
+
+// RepetitiveConstruct: do gc (| gc)* od
+type RepetitiveConstruct struct {
+	Pos lexer.Position
+
+	Commands []*GuardedCommand `"do" @@ ( ( "|" @@ )* )? "od"`
+}
+
+// Statement is a top-level entry in begin...end. It is either an
+// alternative construct (if...fi), a repetitive construct (do...od),
+// or the original ProSe guarded statement (priority guard -> actions).
 type Statement struct {
 	Pos lexer.Position
 
-	Priority *int64    `( "<" @Number ">")?`
-	Guard    *Expr     `@@ "-" ">"`
-	Actions  []*Action `@@ ";" ( ( @@ ";" )* )?`
+	Alternative *AlternativeConstruct  `  @@`
+	Repetitive  *RepetitiveConstruct   `| @@`
+	Guarded     *GuardedProSeStatement `| @@`
+}
+
+// GuardedProSeStatement is the original ProSe form: [<priority>] guard -> action ;+
+type GuardedProSeStatement struct {
+	Pos lexer.Position
+
+	Priority *int64       `( "<" @Number ">")?`
+	Guard    *Expr        `@@ "-" ">"`
+	Actions  []*GclAction `@@ ";" ( ( @@ ";" )* )?`
 }
 
 type Action struct {

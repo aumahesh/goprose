@@ -259,17 +259,22 @@ func (this *{{.ImplementationName}}) getNeighbor(id string) (*NeighborState, err
 	return nbr, nil
 }
 
-func (this *{{$.ImplementationName}}) decrementPriority(actionIndex int) {
+func (this *{{$.ImplementationName}}) currentPriority(actionIndex int) int {
+	return this.runningPriority[actionIndex]
+}
+
+func (this *{{$.ImplementationName}}) decrementPriority(actionIndex int) int {
 	p := this.runningPriority[actionIndex]
 	this.runningPriority[actionIndex] = p-1
+	return this.runningPriority[actionIndex]
 }
 
 func (this *{{$.ImplementationName}}) resetPriority(actionIndex int) {
 	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
 }
 
-func (this *{{$.ImplementationName}}) okayToRun(actionIndex int) bool {
-	if this.runningPriority[actionIndex] == 0 {
+func (this *{{$.ImplementationName}}) okayToRun(p int) bool {
+	if p == 0 {
 		return true
 	}
 	return false
@@ -284,8 +289,8 @@ func (this *{{$.ImplementationName}}) {{.GuardName}}() (bool, *NeighborState) {
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority({{$count}})
-	if this.okayToRun({{$count}}) {
+	p := this.currentPriority({{$count}})
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard {{$count}}")
 
 		{{ range .GuardCode }}
@@ -293,20 +298,25 @@ func (this *{{$.ImplementationName}}) {{.GuardName}}() (bool, *NeighborState) {
 		{{- end }}
 
 		log.Debugf("Guard {{$count}} evaluated to %v", takeAction)
-		this.resetPriority({{$count}})
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *{{$.ImplementationName}}) {{.ActionName}}(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action {{$count}}")
+	p := this.decrementPriority({{$count}})
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action {{$count}}")
 
-	{{ range .ActionCode }}
-	{{.}}
-	{{- end }}
+		{{ range .ActionCode }}
+		{{.}}
+		{{- end }}
 
-	log.Debugf("Action {{$count}} executed")
+		log.Debugf("Action {{$count}} executed")
+
+		this.resetPriority({{$count}})
+
+	}
 
 	return true, neighbor
 }

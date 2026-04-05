@@ -236,17 +236,22 @@ func (this *ProSe_impl_PursuerEvaderTracking) getNeighbor(id string) (*NeighborS
 	return nbr, nil
 }
 
-func (this *ProSe_impl_PursuerEvaderTracking) decrementPriority(actionIndex int) {
+func (this *ProSe_impl_PursuerEvaderTracking) currentPriority(actionIndex int) int {
+	return this.runningPriority[actionIndex]
+}
+
+func (this *ProSe_impl_PursuerEvaderTracking) decrementPriority(actionIndex int) int {
 	p := this.runningPriority[actionIndex]
 	this.runningPriority[actionIndex] = p-1
+	return this.runningPriority[actionIndex]
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) resetPriority(actionIndex int) {
 	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
 }
 
-func (this *ProSe_impl_PursuerEvaderTracking) okayToRun(actionIndex int) bool {
-	if this.runningPriority[actionIndex] == 0 {
+func (this *ProSe_impl_PursuerEvaderTracking) okayToRun(p int) bool {
+	if p == 0 {
 		return true
 	}
 	return false
@@ -260,8 +265,8 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard0() (bool, *NeighborS
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(0)
-	if this.okayToRun(0) {
+	p := this.currentPriority(0)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 0")
 
 		
@@ -270,20 +275,25 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard0() (bool, *NeighborS
 		}
 
 		log.Debugf("Guard 0 evaluated to %v", takeAction)
-		this.resetPriority(0)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 0")
+	p := this.decrementPriority(0)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 0")
 
-	
-	temp0 := rand.Int63n(int64(2))
-	this.state.IsEvaderHere = (temp0 == int64(1))
+		
+		temp0 := rand.Int63n(int64(2))
+		this.state.IsEvaderHere = (temp0 == int64(1))
 
-	log.Debugf("Action 0 executed")
+		log.Debugf("Action 0 executed")
+
+		this.resetPriority(0)
+
+	}
 
 	return true, neighbor
 }
@@ -295,8 +305,8 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard1() (bool, *NeighborS
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(1)
-	if this.okayToRun(1) {
+	p := this.currentPriority(1)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 1")
 
 		
@@ -305,22 +315,27 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard1() (bool, *NeighborS
 		}
 
 		log.Debugf("Guard 1 evaluated to %v", takeAction)
-		this.resetPriority(1)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) executeAction1(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 1")
+	p := this.decrementPriority(1)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 1")
 
-	
-	this.state.P = this.id
-	this.state.Dist2Evader = int64(0)
-	temp1 := time.Now().Unix()
-	this.state.DetectTimestamp = temp1
+		
+		this.state.P = this.id
+		this.state.Dist2Evader = int64(0)
+		temp1 := time.Now().Unix()
+		this.state.DetectTimestamp = temp1
 
-	log.Debugf("Action 1 executed")
+		log.Debugf("Action 1 executed")
+
+		this.resetPriority(1)
+
+	}
 
 	return true, neighbor
 }
@@ -332,8 +347,8 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard2() (bool, *NeighborS
 	takeAction = false
 	neighbor = nil
 
-	this.decrementPriority(2)
-	if this.okayToRun(2) {
+	p := this.currentPriority(2)
+	if this.okayToRun(p-1) {
 		log.Debugf("Evaluating Guard 2")
 
 		
@@ -345,25 +360,30 @@ func (this *ProSe_impl_PursuerEvaderTracking) evaluateGuard2() (bool, *NeighborS
 		}
 
 		log.Debugf("Guard 2 evaluated to %v", takeAction)
-		this.resetPriority(2)
 	}
 
 	return takeAction, neighbor
 }
 
 func (this *ProSe_impl_PursuerEvaderTracking) executeAction2(neighbor *NeighborState) (bool, *NeighborState) {
-	log.Debugf("Executing Action 2")
+	p := this.decrementPriority(2)
+	if this.okayToRun(p) {
+		log.Debugf("Executing Action 2")
 
-	
-	if neighbor == nil {
-		log.Errorf("invalid neighbor, nil received")
-		return false, nil
+		
+		if neighbor == nil {
+			log.Errorf("invalid neighbor, nil received")
+			return false, nil
+		}
+		this.state.P = neighbor.id
+		this.state.Dist2Evader = (neighbor.state.Dist2Evader + int64(1))
+		this.state.DetectTimestamp = neighbor.state.DetectTimestamp
+
+		log.Debugf("Action 2 executed")
+
+		this.resetPriority(2)
+
 	}
-	this.state.P = neighbor.id
-	this.state.Dist2Evader = (neighbor.state.Dist2Evader + int64(1))
-	this.state.DetectTimestamp = neighbor.state.DetectTimestamp
-
-	log.Debugf("Action 2 executed")
 
 	return true, neighbor
 }

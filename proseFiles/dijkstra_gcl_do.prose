@@ -1,0 +1,18 @@
+// Dijkstra's GCL example: reduce x modulo y using a top-level do...od construct.
+// The repetitive construct loops until no guard is true.
+
+program dijkstra_gcl_do
+
+sensor j
+
+var
+    public int x.j = 10;
+    public int y.j = 3;
+
+begin
+
+    do x.j > y.j -> x.j = x.j - y.j;
+    | x.j > 0 && x.j <= y.j -> x.j = x.j - 1;
+    od
+
+end

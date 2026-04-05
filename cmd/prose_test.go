@@ -21,6 +21,8 @@ func TestCompileAndGenerateCode(t *testing.T) {
 		"pursuer_evader.prose",
 		"distance_vector.prose",
 		"pursuer_evader_with_priority.prose",
+		"dijkstra_gcl.prose",
+		"dijkstra_gcl_do.prose",
 	}
 
 	templatesFolder = "../templates"

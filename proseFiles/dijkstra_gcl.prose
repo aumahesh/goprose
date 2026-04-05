@@ -1,0 +1,19 @@
+// Dijkstra's GCL example: compute GCD using a top-level if...fi construct.
+// The alternative construct non-deterministically executes one of the two
+// true-guarded subtractions until x and y are equal.
+
+program dijkstra_gcl
+
+sensor j
+
+var
+    public int x.j = 42;
+    public int y.j = 18;
+
+begin
+
+    if x.j > y.j -> x.j = x.j - y.j;
+    | y.j > x.j -> y.j = y.j - x.j;
+    fi
+
+end
