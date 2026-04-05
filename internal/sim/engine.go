@@ -81,13 +81,15 @@ func NewEngine(parsedProg *parser.Program, interProg *intermediate.Program, topo
 	for name, v := range interProg.Constants {
 		constants[name] = v.DefaultValue
 	}
+	rng := rand.New(rand.NewSource(42))
+
 	// Evaluate constant init expressions
 	for name, expr := range interProg.ConstantInitFunctions {
 		ctx := &EvalCtx{
 			LocalState: make(NodeState),
 			SensorID:   sensorID,
 			Constants:  constants,
-			RNG:        rand.New(rand.NewSource(42)),
+			RNG:        rng,
 		}
 		val, err := EvalExpr(expr.GetExpr(), ctx)
 		if err != nil {
@@ -119,7 +121,7 @@ func NewEngine(parsedProg *parser.Program, interProg *intermediate.Program, topo
 	nodes := make(map[string]*Node, len(topo.Nodes))
 	nodeOrder := make([]string, 0, len(topo.Nodes))
 	for _, tn := range topo.Nodes {
-		state, err := buildInitialState(tn, interProg, parsedProg, sensorID, constants)
+		state, err := buildInitialState(tn, interProg, parsedProg, sensorID, constants, rng)
 		if err != nil {
 			return nil, fmt.Errorf("node %s: %w", tn.ID, err)
 		}
@@ -153,12 +155,14 @@ func NewEngine(parsedProg *parser.Program, interProg *intermediate.Program, topo
 		varNames:   varNames,
 		sensorID:   sensorID,
 		constants:  constants,
-		rng:        rand.New(rand.NewSource(42)),
+		rng:        rng,
 	}, nil
 }
 
 // buildInitialState computes a node's initial variable state.
-func buildInitialState(tn *TopologyNode, interProg *intermediate.Program, parsedProg *parser.Program, sensorID string, constants NodeState) (NodeState, error) {
+// rng is the shared engine RNG so that init expressions (e.g. rand.Int63n)
+// draw different values for each node.
+func buildInitialState(tn *TopologyNode, interProg *intermediate.Program, parsedProg *parser.Program, sensorID string, constants NodeState, rng *rand.Rand) (NodeState, error) {
 	state := make(NodeState)
 
 	// Set defaults from intermediate variables
@@ -176,7 +180,7 @@ func buildInitialState(tn *TopologyNode, interProg *intermediate.Program, parsed
 				SensorID:   sensorID,
 				NodeID:     tn.ID,
 				Constants:  constants,
-				RNG:        rand.New(rand.NewSource(42)),
+				RNG:        rng,
 			}
 			val, err := EvalExpr(initExpr.GetExpr(), ctx)
 			if err != nil {
