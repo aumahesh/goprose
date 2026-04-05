@@ -1,4 +1,4 @@
-// +build dijkstra_gcl
+// +build dijkstra_gcl_do
 
 package internal
 
@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/proto"
 	"github.com/dmichael/go-multicast/multicast"
-	p "aumahesh.com/prose/dijkstra_gcl/models"
+	p "aumahesh.com/prose/dijkstra_gcl_do/models"
 )
 
 const (
@@ -38,7 +38,7 @@ type NeighborState struct {
 	active bool
 }
 
-type ProSe_impl_dijkstra_gcl struct {
+type ProSe_impl_dijkstra_gcl_do struct {
 	id string
 	state *p.State
 	mcastAddr string
@@ -52,7 +52,7 @@ type ProSe_impl_dijkstra_gcl struct {
 	actions []func(*NeighborState) (bool, *NeighborState)
 }
 
-func (this *ProSe_impl_dijkstra_gcl) init(id string, mcastAddr string) error {
+func (this *ProSe_impl_dijkstra_gcl_do) init(id string, mcastAddr string) error {
 	this.id = id
 	this.state = &p.State{}
 	this.mcastAddr = mcastAddr
@@ -87,7 +87,7 @@ func (this *ProSe_impl_dijkstra_gcl) init(id string, mcastAddr string) error {
 	return nil
 }
 
-func (this *ProSe_impl_dijkstra_gcl) initState() {
+func (this *ProSe_impl_dijkstra_gcl_do) initState() {
 	this.state.X = 0
         this.state.Y = 0
         
@@ -97,17 +97,17 @@ func (this *ProSe_impl_dijkstra_gcl) initState() {
 	
 }
 
-func (this *ProSe_impl_dijkstra_gcl) initVaribleX() int64 {
+func (this *ProSe_impl_dijkstra_gcl_do) initVaribleX() int64 {
     
-	return int64(42)
+	return int64(10)
 }
 
-func (this *ProSe_impl_dijkstra_gcl) initVaribleY() int64 {
+func (this *ProSe_impl_dijkstra_gcl_do) initVaribleY() int64 {
     
-	return int64(18)
+	return int64(3)
 }
 
-func (this *ProSe_impl_dijkstra_gcl) EventHandler(ctx context.Context) {
+func (this *ProSe_impl_dijkstra_gcl_do) EventHandler(ctx context.Context) {
 	heartbeatTicker := time.NewTicker(heartbeatInterval)
 	updTicker := time.NewTicker(updateLocalStateInterval)
 	for {
@@ -177,7 +177,7 @@ func (this *ProSe_impl_dijkstra_gcl) EventHandler(ctx context.Context) {
 	}
 }
 
-func (this *ProSe_impl_dijkstra_gcl) evaluateNeighborStates() {
+func (this *ProSe_impl_dijkstra_gcl_do) evaluateNeighborStates() {
 	for id, nbr := range this.neighborState {
 		if nbr.updatedAt.Add(inactivityTimeout).Before(time.Now()) {
 			nbr.active = false
@@ -194,7 +194,7 @@ func (this *ProSe_impl_dijkstra_gcl) evaluateNeighborStates() {
 	}
 }
 
-func (this *ProSe_impl_dijkstra_gcl) isNeighborUp(id string) bool {
+func (this *ProSe_impl_dijkstra_gcl_do) isNeighborUp(id string) bool {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return false
@@ -202,11 +202,11 @@ func (this *ProSe_impl_dijkstra_gcl) isNeighborUp(id string) bool {
 	return nbr.active
 }
 
-func (this *ProSe_impl_dijkstra_gcl) neighbors() map[string]*NeighborState {
+func (this *ProSe_impl_dijkstra_gcl_do) neighbors() map[string]*NeighborState {
 	return this.neighborState
 }
 
-func (this *ProSe_impl_dijkstra_gcl) setNeighbor(id string, state bool) bool {
+func (this *ProSe_impl_dijkstra_gcl_do) setNeighbor(id string, state bool) bool {
 	nbr, ok := this.neighborState[id]
 	if !ok {
 		return false
@@ -215,7 +215,7 @@ func (this *ProSe_impl_dijkstra_gcl) setNeighbor(id string, state bool) bool {
 	return nbr.active
 }
 
-func (this *ProSe_impl_dijkstra_gcl) getNeighbor(id string) (*NeighborState, error) {
+func (this *ProSe_impl_dijkstra_gcl_do) getNeighbor(id string) (*NeighborState, error) {
 	if id == this.id {
 		return &NeighborState{
 					id: this.id,
@@ -234,21 +234,21 @@ func (this *ProSe_impl_dijkstra_gcl) getNeighbor(id string) (*NeighborState, err
 	return nbr, nil
 }
 
-func (this *ProSe_impl_dijkstra_gcl) currentPriority(actionIndex int) int {
+func (this *ProSe_impl_dijkstra_gcl_do) currentPriority(actionIndex int) int {
 	return this.runningPriority[actionIndex]
 }
 
-func (this *ProSe_impl_dijkstra_gcl) decrementPriority(actionIndex int) int {
+func (this *ProSe_impl_dijkstra_gcl_do) decrementPriority(actionIndex int) int {
 	p := this.runningPriority[actionIndex]
 	this.runningPriority[actionIndex] = p-1
 	return this.runningPriority[actionIndex]
 }
 
-func (this *ProSe_impl_dijkstra_gcl) resetPriority(actionIndex int) {
+func (this *ProSe_impl_dijkstra_gcl_do) resetPriority(actionIndex int) {
 	this.runningPriority[actionIndex] = this.configuredPriority[actionIndex]
 }
 
-func (this *ProSe_impl_dijkstra_gcl) okayToRun(p int) bool {
+func (this *ProSe_impl_dijkstra_gcl_do) okayToRun(p int) bool {
 	if p == 0 {
 		return true
 	}
@@ -256,7 +256,7 @@ func (this *ProSe_impl_dijkstra_gcl) okayToRun(p int) bool {
 }
 
 
-func (this *ProSe_impl_dijkstra_gcl) evaluateGuard0() (bool, *NeighborState) {
+func (this *ProSe_impl_dijkstra_gcl_do) evaluateGuard0() (bool, *NeighborState) {
 	var takeAction bool
 	var neighbor *NeighborState
 
@@ -276,26 +276,29 @@ func (this *ProSe_impl_dijkstra_gcl) evaluateGuard0() (bool, *NeighborState) {
 	return takeAction, neighbor
 }
 
-func (this *ProSe_impl_dijkstra_gcl) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
+func (this *ProSe_impl_dijkstra_gcl_do) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
 	p := this.decrementPriority(0)
 	if this.okayToRun(p) {
 		log.Debugf("Executing Action 0")
 
 		
-		var temp0 []int
-		if (this.state.X > this.state.Y) {
-			temp0 = append(temp0, 0)
-		}
-		if (this.state.Y > this.state.X) {
-			temp0 = append(temp0, 1)
-		}
-		if len(temp0) > 0 {
+		for {
+			var temp0 []int
+			if (this.state.X > this.state.Y) {
+				temp0 = append(temp0, 0)
+			}
+			if ((this.state.X > int64(0)) && (this.state.X <= this.state.Y)) {
+				temp0 = append(temp0, 1)
+			}
+			if len(temp0) == 0 {
+				break
+			}
 			temp1 := temp0[rand.Intn(len(temp0))]
 			switch temp1 {
 			case 0:
 				this.state.X = (this.state.X - this.state.Y)
 			case 1:
-				this.state.Y = (this.state.Y - this.state.X)
+				this.state.X = (this.state.X - int64(1))
 			}
 		}
 
@@ -309,7 +312,7 @@ func (this *ProSe_impl_dijkstra_gcl) executeAction0(neighbor *NeighborState) (bo
 }
 
 
-func (this *ProSe_impl_dijkstra_gcl) updateLocalState() bool {
+func (this *ProSe_impl_dijkstra_gcl_do) updateLocalState() bool {
 	stateChanged := false
 
 	couldExecute := []int{}
@@ -333,7 +336,7 @@ func (this *ProSe_impl_dijkstra_gcl) updateLocalState() bool {
 	return stateChanged
 }
 
-func (this *ProSe_impl_dijkstra_gcl) broadcastLocalState() (int, error) {
+func (this *ProSe_impl_dijkstra_gcl_do) broadcastLocalState() (int, error) {
 	updMessage := &p.NeighborUpdate{
 		Id: this.id,
 		State: &p.State{
@@ -351,7 +354,7 @@ func (this *ProSe_impl_dijkstra_gcl) broadcastLocalState() (int, error) {
 	return this.send(broadcastMessage)
 }
 
-func (this *ProSe_impl_dijkstra_gcl) sendHeartBeat() (int, error) {
+func (this *ProSe_impl_dijkstra_gcl_do) sendHeartBeat() (int, error) {
 	hbMessage := &p.NeighborHeartBeat{
 		Id: this.id,
 		SentAt: time.Now().Unix(),
@@ -365,7 +368,7 @@ func (this *ProSe_impl_dijkstra_gcl) sendHeartBeat() (int, error) {
 	return this.send(broadcastMessage)
 }
 
-func (this *ProSe_impl_dijkstra_gcl) send(msg *p.BroadcastMessage) (int, error) {
+func (this *ProSe_impl_dijkstra_gcl_do) send(msg *p.BroadcastMessage) (int, error) {
 	log.Debugf("Sending: %+v", msg)
 	data, err := proto.Marshal(msg)
 	if err != nil {
@@ -374,7 +377,7 @@ func (this *ProSe_impl_dijkstra_gcl) send(msg *p.BroadcastMessage) (int, error) 
 	return this.mcastConn.Write(data)
 }
 
-func (this *ProSe_impl_dijkstra_gcl) msgHandler(src *net.UDPAddr, n int, b []byte) {
+func (this *ProSe_impl_dijkstra_gcl_do) msgHandler(src *net.UDPAddr, n int, b []byte) {
 	log.Debugf("received message (%d bytes) from %s", n, src.String())
 	broadcastMessage := &p.BroadcastMessage{}
 	err := proto.Unmarshal(b[:n], broadcastMessage)
@@ -396,7 +399,7 @@ func (this *ProSe_impl_dijkstra_gcl) msgHandler(src *net.UDPAddr, n int, b []byt
 	}
 }
 
-func (this *ProSe_impl_dijkstra_gcl) Listener(ctx context.Context) {
+func (this *ProSe_impl_dijkstra_gcl_do) Listener(ctx context.Context) {
 	addr, err := net.ResolveUDPAddr("udp4", this.mcastAddr)
 	if err != nil {
 		log.Errorf("Error resolving mcast address: %s", err)

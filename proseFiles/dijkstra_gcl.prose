@@ -1,5 +1,6 @@
-// Dijkstra's GCL example: compute GCD using if...fi within the action body.
-// Each node holds two positive integers and repeatedly reduces them until equal.
+// Dijkstra's GCL example: compute GCD using a top-level if...fi construct.
+// The alternative construct non-deterministically executes one of the two
+// true-guarded subtractions until x and y are equal.
 
 program dijkstra_gcl
 
@@ -11,9 +12,8 @@ var
 
 begin
 
-    (x.j != y.j) ->
-        if x.j > y.j -> x.j = x.j - y.j;
-        | y.j > x.j -> y.j = y.j - x.j;
-        fi;
+    if x.j > y.j -> x.j = x.j - y.j;
+    | y.j > x.j -> y.j = y.j - x.j;
+    fi
 
 end

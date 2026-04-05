@@ -139,7 +139,19 @@ type RepetitiveConstruct struct {
 	Commands []*GuardedCommand `"do" @@ ( ( "|" @@ )* )? "od"`
 }
 
+// Statement is a top-level entry in begin...end. It is either an
+// alternative construct (if...fi), a repetitive construct (do...od),
+// or the original ProSe guarded statement (priority guard -> actions).
 type Statement struct {
+	Pos lexer.Position
+
+	Alternative *AlternativeConstruct  `  @@`
+	Repetitive  *RepetitiveConstruct   `| @@`
+	Guarded     *GuardedProSeStatement `| @@`
+}
+
+// GuardedProSeStatement is the original ProSe form: [<priority>] guard -> action ;+
+type GuardedProSeStatement struct {
 	Pos lexer.Position
 
 	Priority *int64       `( "<" @Number ">")?`

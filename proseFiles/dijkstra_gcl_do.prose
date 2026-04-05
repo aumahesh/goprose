@@ -1,4 +1,5 @@
-// Dijkstra's GCL example: reduce x to 0 using do...od (repetitive construct).
+// Dijkstra's GCL example: reduce x modulo y using a top-level do...od construct.
+// The repetitive construct loops until no guard is true.
 
 program dijkstra_gcl_do
 
@@ -10,9 +11,8 @@ var
 
 begin
 
-    (x.j > 0) ->
-        do x.j > y.j -> x.j = x.j - y.j;
-        | x.j > 0 && x.j <= y.j -> x.j = x.j - 1;
-        od;
+    do x.j > y.j -> x.j = x.j - y.j;
+    | x.j > 0 && x.j <= y.j -> x.j = x.j - 1;
+    od
 
 end
