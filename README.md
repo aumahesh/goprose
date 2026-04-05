@@ -1,119 +1,224 @@
 # goprose
-ProSe compiler in golang (generates golang code)
 
 [![Go](https://github.com/aumahesh/goprose/actions/workflows/go.yml/badge.svg)](https://github.com/aumahesh/goprose/actions/workflows/go.yml)
 
-## ProSe: Overview
+A Go compiler for **ProSe** — a language for specifying distributed sensor-network algorithms as guarded commands. Write a `.prose` file, run the compiler, get a complete, deployable Go module.
 
-ProSe is a programming tool that allows the designers to concisely specify
-programs (for example, network protocols). ProSe is based on the theoretical
-foundation on computational model in sensor networks. ProSe enables the
-designer to specify sensor network protocols and macroprogramming
-primitives in simple, abstract models considered in distributed computing
-literature (for example, shared-memory, message-passing, etc). Furthermore,
-ProSe enables the reuse of existing fault-tolerance/self-stabilizing algorithms
-from the literature in the context of sensor networks. ProSe automatically
-generate and deploy code. An advantage of ProSe is that it will facilitate
-the designer to use existing algorithms for automating the addition of
-fault-tolerance to existing programs. Moreover, since abstract models are
-used to specify protocols, ProSe allows the designer to gain assurance about
-the programs deployed in the network using tools such as model checkers.
+## What is ProSe?
 
-ProSe programs are written in guarded commands (cf. [1], [2])
-
-### Guarded Commands
-
-A program is a set of variables and a finite set of actions. Each variable
-has a predefined nonempty domain. In this dissertation, the programs are
-specified in terms of guarded commands each guarded command is of
-the form: 
-    
-```
-    guard   ->  statement;
-```
-
-The guard of each action is a predicate over the program variables. The
-statement of each action atomically updates zero or more program variables.
-
-As defined in [4], guards of all commands are evaluated first. Then, from the
-subset of all commands where the guards evaluated to true, one command is 
-randomly picked and the corresponding action is executed.
-
-## Example ProSe Program
-
-Here is an example program written in guarded commands. This is a routing
-tree maintenance program (cf. [3]). The program is available [here](https://github.com/aumahesh/goprose/blob/main/proseFiles/routing.prose).
+Distributed algorithms are often described in the literature as sets of *guarded commands* ([Chandy & Misra, 1988](https://www.amazon.com/Parallel-Program-Design-Mani-Chandy/dp/0201058669)):
 
 ```
-program RoutingTreeMaintenance
-import "neighborhood"
-import "math/rand"
-sensor j
-const
-	int CMAX = 100;
+guard → statement
+```
+
+ProSe lets you write programs in exactly that style. The compiler handles all the networking boilerplate (UDP multicast, protobuf state broadcast, neighbor tracking) so you can focus on the algorithm.
+
+Each round, all guards are evaluated. One of the commands whose guard is true is picked at random and executed. This matches the shared-memory computational model used in distributed computing theory. See [Arumugam & Kulkarni, S-Cube 2009](https://link.springer.com/chapter/10.1007/978-3-642-11869-3_3) for the original ProSe paper.
+
+## Quick start
+
+```bash
+make build                                    # produces bin/prose
+bin/prose -p proseFiles/gcd.prose -o _examples/
+```
+
+The compiler writes a self-contained Go module to `_examples/<ProgramName>/`. Build and run it with the generated `Makefile`.
+
+## Writing a ProSe program
+
+### Structure
+
+```
+program <Name>
+
+[import "<go-package>"]
+
+sensor <id>       # name for "this node"
+
+[const
+    <type> <Name> = <value>;]
+
 var
-	public int inv.j, dist.j = 0, rand.Int63n(10);
-	private string p.j;
+    <access> <type> <name>.<sensor> [= <value>];
+
 begin
-	(dist.k < dist.j) && (neighborhood.up(k)) && (inv.k < CMAX) && (inv.k < inv.j)
-		-> p.j, inv.j = k, inv.k;
-	|
-	(dist.k < dist.j) && (neighborhood.up(k)) && (inv.k+1 < CMAX) && (inv.k+1 < inv.j)
-		-> p.j, inv.j = k, inv.k+1;
-	|
-	(p.j != "") && (neighborhood.up(p.j) == false)|| (inv.(p.j) >= CMAX) ||
-		( (dist.(p.j) < dist.j) && (inv.j != inv.(p.j)) ) ||
-		( (dist.(p.j) > dist.j) && (inv.j != inv.(p.j)+1) )
-		-> p.j, inv.j = "", CMAX;
-	|
-	(p.j == "") && (inv.j < CMAX)
-		-> inv.j = CMAX;
+    <statement>
+  | <statement>
+  ...
 end
-
 ```
 
-The complete grammar for ProSe programs is available [here](https://github.com/aumahesh/goprose/blob/main/internal/parser/prose.go#L1). 
+`<access>` is `public` (broadcast to neighbors) or `private` (local only). Variables are referenced as `x.j` (local) or `x.k` (neighbor).
 
-## Generated Code
+### Guarded commands
 
-goprose compiles the program into Go Module. 
-
-```
-make all
-bin/prose --p proseFiles/routing.prose --o _examples/
-```
-
-Generated module is written to `_examples` folder. Generated code is available [here](https://github.com/aumahesh/goprose/tree/main/_examples/RoutingTreeMaintenance)
+The classic form — a boolean guard followed by one or more assignments:
 
 ```
-_examples/RoutingTreeMaintenance
+program GCD
+sensor j
+var
+    public int X.j, Y.j = 3542, 943;
+begin
+    X.j > Y.j -> X.j = X.j - Y.j;
+  |
+    Y.j > X.j -> Y.j = Y.j - X.j;
+end
+```
+
+Multiple assignments in one action are comma-separated on both sides:
+
+```
+    (dist.k < dist.j) -> p.j, dist.j = k, dist.k;
+```
+
+### Priority
+
+Prefix a statement with `<N>` to fire it once every N rounds instead of every round. Higher N = less frequent.
+
+```
+begin
+    <2> isEvaderHere.j -> p.j = j; dist.j = 0;
+  |
+    <1> dist.k < dist.j -> p.j = k; dist.j = dist.k + 1;
+end
+```
+
+### Dijkstra's Guarded Command Language (GCL)
+
+Two additional statement forms from Dijkstra's GCL [[2]](#references) are supported at the top level.
+
+**`if…fi` — alternative construct** ([Dijkstra, 1997](https://www.amazon.com/Discipline-Programming-Edsger-W-Dijkstra/dp/013215871X)). Pick one true-guarded command non-deterministically. No-op if none are true.
+
+```
+program dijkstra_gcl
+sensor j
+var
+    public int x.j = 42;
+    public int y.j = 18;
+begin
+    if x.j > y.j -> x.j = x.j - y.j;
+    | y.j > x.j -> y.j = y.j - x.j;
+    fi
+end
+```
+
+**`do…od` — repetitive construct** ([Dijkstra, 1997](https://www.amazon.com/Discipline-Programming-Edsger-W-Dijkstra/dp/013215871X)). Loop, picking a true-guarded command each iteration, until none are true.
+
+```
+program dijkstra_gcl_do
+sensor j
+var
+    public int x.j = 10;
+    public int y.j = 3;
+begin
+    do x.j > y.j -> x.j = x.j - y.j;
+    | x.j > 0 && x.j <= y.j -> x.j = x.j - 1;
+    od
+end
+```
+
+Both forms can be mixed with regular guarded statements in the same `begin…end` block.
+
+## What gets generated
+
+The compiler writes a complete Go module:
+
+```
+_examples/GCD/
 ├── Makefile
-├── cmd
-│   └── main.go
+├── cmd/main.go
 ├── go.mod
-├── internal
-│   ├── ProSe_impl_RoutingTreeMaintenance.go
-│   └── ProSe_intf_RoutingTreeMaintenance.go
-└── proto
-    └── state.proto
-
-3 directories, 6 files
-
+├── internal/
+│   ├── ProSe_impl_GCD.go
+│   └── ProSe_intf_GCD.go
+└── proto/state.proto
 ```
 
-## Publications
+Each statement in your `.prose` file becomes a guard/action function pair. For the GCD example:
 
-1. R. Hajisheykhi, L. Zhu, M. Arumugam, M. Demirbas, and S. Kulkarni.  “Slow is Fast” for Wireless Sensor Networks in the Presence of Message Losses. Journal of Parallel and Distributed Computing (JPDC), Volume 77,Pages 41–57, 03/15.
-2. M. Arumugam, M. Demirbas, and S. Kulkarni. “Slow is Fast” for Wireless Sensor Networks in the Presence of Message Losses. In Proceedings of the 12th International Symposium on Stabilization, Safety, and Security of Distributed Systems (SSS), 09/10. (New York City, NY).
-3. M. Arumugam and S. S. Kulkarni. ProSe: A Programming Tool for Rapid Prototyping of Sensor Networks. In Proceedings of the First International Conference on Sensor Systems and Software (S-Cube), 09/09. (Pisa, Italy).
-4. M. Arumugam, L. Wang, and S. S. Kulkarni. A Case Study on Prototyping Power Management Protocols for Sensor Networks. In Proceedings of the Eighth International Symposium on Stabilization, Safety, and Security of Distributed Systems, 11/06. (Dallas, TX).
-5. M. Arumugam. Rapid Prototyping and Quick Deployment of Sensor Networks. Ph.D. Dissertation, 2006.
-6. https://aumahesh.me/
+```go
+// Guard: pure predicate, no side effects
+func (this *ProSe_impl_GCD) evaluateGuard0() (bool, *NeighborState) {
+    ...
+    if (this.state.X > this.state.Y) {
+        takeAction = true
+    }
+    return takeAction, neighbor
+}
 
-## References
+// Action: executes when this guard fires
+func (this *ProSe_impl_GCD) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
+    ...
+    this.state.X = (this.state.X - this.state.Y)
+    ...
+}
+```
 
-1. [Parallel Program Design: A Foundation](https://www.amazon.com/Parallel-Program-Design-Mani-Chandy/dp/0201058669). K. M. Chandy and J. Misra, Addison-Wesley, November 1988.
-2. [A Discipline of Programming](https://www.amazon.com/Discipline-Programming-Edsger-W-Dijkstra/dp/013215871X), E. W. Dijkstra, Prentice Hall, 1997.
-3. [Stabilization of grid routing in sensor networks](https://arc.aiaa.org/doi/10.2514/1.20102). Y-R. Choi, M. G. Gouda, H. Zhang, and A. Arora.
-   AIAA Journal of Aerospace Computing, Information, and Communication (JACIC), 2006.
-4. [Guarded Command](https://dl.acm.org/doi/pdf/10.5555/1074100.1074433). Jerrold L. Wagener. Encylopedia of Computer Science, January 2003.
+The scheduler evaluates all guards each round and picks one winner at random:
+
+```go
+func (this *ProSe_impl_GCD) updateLocalState() bool {
+    couldExecute := []int{}
+    for index, stmtFunc := range this.guards {
+        if ok, nbr := stmtFunc(); ok {
+            couldExecute = append(couldExecute, index)
+        }
+    }
+    if len(couldExecute) > 0 {
+        actionIndex := rand.Intn(len(couldExecute))
+        this.actions[couldExecute[actionIndex]](...)
+        return true
+    }
+    return false
+}
+```
+
+For a GCL `if…fi` statement, the compiler generates the non-deterministic selection inline in the action:
+
+```go
+func (this *ProSe_impl_dijkstra_gcl) executeAction0(neighbor *NeighborState) (bool, *NeighborState) {
+    ...
+    var temp0 []int
+    if (this.state.X > this.state.Y) { temp0 = append(temp0, 0) }
+    if (this.state.Y > this.state.X) { temp0 = append(temp0, 1) }
+    if len(temp0) > 0 {
+        switch temp0[rand.Intn(len(temp0))] {
+        case 0: this.state.X = (this.state.X - this.state.Y)
+        case 1: this.state.Y = (this.state.Y - this.state.X)
+        }
+    }
+    ...
+}
+```
+
+And for `do…od`, a `for` loop that breaks when no guard is true:
+
+```go
+    for {
+        var temp0 []int
+        if (this.state.X > this.state.Y) { temp0 = append(temp0, 0) }
+        if (this.state.X > 0 && this.state.X <= this.state.Y) { temp0 = append(temp0, 1) }
+        if len(temp0) == 0 { break }
+        switch temp0[rand.Intn(len(temp0))] {
+        case 0: this.state.X = (this.state.X - this.state.Y)
+        case 1: this.state.X = (this.state.X - int64(1))
+        }
+    }
+```
+
+## More examples
+
+| File | Algorithm |
+|------|-----------|
+| `proseFiles/gcd.prose` | GCD via repeated subtraction |
+| `proseFiles/max.prose` | Distributed max |
+| `proseFiles/routing.prose` | Routing tree maintenance |
+| `proseFiles/distributed_reset.prose` | Distributed reset |
+| `proseFiles/pursuer_evader_with_priority.prose` | Pursuer-evader tracking with priority |
+| `proseFiles/dijkstra_gcl.prose` | GCD via GCL `if…fi` |
+| `proseFiles/dijkstra_gcl_do.prose` | Modulo via GCL `do…od` |
+
+Full grammar: [`internal/parser/prose.go`](internal/parser/prose.go)
+
