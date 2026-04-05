@@ -38,6 +38,12 @@ type Expression struct {
 	FinalResult   string
 }
 
+// GetExpr returns the underlying parser expression. Used by the simulator's
+// runtime evaluator to evaluate init expressions without code generation.
+func (e *Expression) GetExpr() *parser.Expr {
+	return e.expr
+}
+
 func NewExpression(expr *parser.Expr, sensorId string, constants, variables map[string]*Variable, vs map[string]bool, manager *TempsManager) *Expression {
 	e := &Expression{
 		expr:          expr,

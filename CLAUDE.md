@@ -2,6 +2,13 @@
 
 Go implementation of the ProSe compiler. Takes `.prose` source files written in guarded-command notation and generates a complete Go module (proto definitions, interface, implementation, main, Makefile).
 
+## Tools
+
+| Binary | Purpose |
+|--------|---------|
+| `bin/prose` | Compiler: `.prose` → Go module |
+| `bin/prose-sim` | Visualizer: runs the algorithm in-process, serves a web UI |
+
 ## Build and test
 
 ```bash

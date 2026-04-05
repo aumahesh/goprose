@@ -208,6 +208,65 @@ And for `do…od`, a `for` loop that breaks when no guard is true:
     }
 ```
 
+## Visualizer
+
+`prose-sim` runs a `.prose` program as an in-process simulation and serves a live web UI at `localhost:8080`.
+
+```bash
+make build-sim                        # produces bin/prose-sim
+
+# generate topology from CLI
+bin/prose-sim -p proseFiles/gcd.prose --nodes 4 --topology ring
+
+# or load a YAML topology file
+bin/prose-sim -p proseFiles/gcd.prose --topo-file topology.yaml
+```
+
+### Execution model
+
+The simulator faithfully models the **asynchronous** execution of distributed algorithms:
+
+- **One step = one node fires.** On each step a node is picked at random (uniform), evaluates all its guards, and executes one of the true-guarded commands chosen at random. Nodes have no shared clock.
+- **Neighbor state** is the last state broadcast by that neighbor — nodes do not see each other's state instantaneously.
+- **Priority** (`<N>`) is respected: a statement with priority N is eligible to fire only every N steps of that node.
+
+### Topology
+
+**From the CLI** — useful for quick demos:
+
+```bash
+--nodes 5 --topology ring            # ring of 5 nodes
+--nodes 5 --topology fully-connected
+--nodes 5 --topology random
+```
+
+Initial state is taken from the default values in the `.prose` file.
+
+**From a YAML file** — for full control over IDs, initial state, and adjacency:
+
+```yaml
+nodes:
+  - id: n1
+    state: { X: 42, Y: 18 }
+  - id: n2
+    state: { X: 10, Y: 7 }
+  - id: n3
+    state: { X: 7,  Y: 3  }
+neighbors:
+  n1: [n2]
+  n2: [n1, n3]
+  n3: [n2]
+```
+
+### Web UI
+
+Open `http://localhost:8080` after starting `prose-sim`.
+
+- **Graph panel** — nodes as circles, edges from the topology, state variables as labels. The node that fired most recently is highlighted.
+- **Controls** — Step (one node fires), Auto (continuous with adjustable speed), Reset.
+- **Log** — scrolling history: `step 42 · n2 fired guard 0 (X.j > Y.j) · X: 42 → 36`.
+- **Generate Go** — runs the standard compiler on the loaded `.prose` file and downloads the Go module as a zip.
+
 ## More examples
 
 | File | Algorithm |
