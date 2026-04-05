@@ -14,7 +14,7 @@ guard → statement
 
 ProSe lets you write programs in exactly that style. The compiler handles all the networking boilerplate (UDP multicast, protobuf state broadcast, neighbor tracking) so you can focus on the algorithm.
 
-Each round, all guards are evaluated. One of the commands whose guard is true is picked at random and executed. This matches the shared-memory computational model used in distributed computing theory. See [Arumugam & Kulkarni, S-Cube 2009](https://link.springer.com/chapter/10.1007/978-3-642-11869-3_3) for the original ProSe paper.
+Each round, all guards are evaluated. One of the commands whose guard is true is picked at random and executed. This matches the shared-memory computational model used in distributed computing theory. See [Arumugam & Kulkarni, S-Cube 2009](paper/Arumugam-Sensor%20Systems%20and%20Software-2010-First%20International%20Conference%20on%20Sensor%20Systems%20and%20Software%20S-Cube.pdf) for the original ProSe paper.
 
 ## Quick start
 
