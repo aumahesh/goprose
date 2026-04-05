@@ -2,10 +2,18 @@
 
 Go implementation of the ProSe compiler. Takes `.prose` source files written in guarded-command notation and generates a complete Go module (proto definitions, interface, implementation, main, Makefile).
 
+## Tools
+
+| Binary | Purpose |
+|--------|---------|
+| `bin/prose` | Compiler: `.prose` → Go module |
+| `bin/prose-sim` | Visualizer: runs the algorithm in-process, serves a web UI |
+
 ## Build and test
 
 ```bash
 make build          # builds bin/prose
+make build-sim      # builds bin/prose-sim
 make test           # runs go test ./...
 go test ./...       # same
 ```
@@ -20,13 +28,46 @@ go run cmd/prose.go -p proseFiles/max.prose -o _examples/
 
 The `-p` flag is the source prose file; `-o` is the output directory. The compiler writes `<output>/<ProgramName>/` containing a ready-to-build Go module.
 
+## Running the simulator
+
+```bash
+# auto-generated topology
+bin/prose-sim -p proseFiles/gcd.prose --nodes 4 --topology ring
+
+# YAML topology file
+bin/prose-sim -p proseFiles/gcd.prose --topo-file topology.yaml
+
+# per-node state override (repeatable)
+bin/prose-sim -p proseFiles/pursuer_evader_with_priority.prose \
+  --nodes 10 --topology random \
+  --node-state n5.isEvaderHere=true
+```
+
+Open `http://localhost:8080`. All flags:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-p` | *(required)* | Path to `.prose` file |
+| `--nodes` | `3` | Number of nodes (with `--topology`) |
+| `--topology` | `ring` | `ring`, `fully-connected`, or `random` |
+| `--topo-file` | — | YAML topology file (overrides `--nodes`/`--topology`) |
+| `--node-state` | — | `<nodeID>.<varName>=<value>`, repeatable |
+| `--addr` | `:8080` | HTTP listen address |
+| `--templates` | `templates/` | Path to templates dir (for "Generate Go" button) |
+
+`random` topology is always connected — it builds a random spanning tree first, then adds extra edges.
+
 ## Repository layout
 
 ```
-cmd/               – compiler entry point (prose.go) and integration tests
+cmd/
+  prose.go         – compiler entry point and integration tests
+  prose-sim/       – simulator entry point
 internal/
   parser/          – participle-based parser; grammar types in prose.go
   intermediate/    – AST → intermediate representation + code generation
+  sim/             – simulation engine: expression evaluator, node/engine, topology
+  viz/             – HTTP server, REST API, embedded D3.js web UI
   templates/       – template renderer (render.go)
   util/            – camelCase helper
 templates/         – Go text/template files rendered per program
@@ -99,6 +140,30 @@ This separation (peek in guard, decrement in action) means guard evaluation has 
 - **`do…od`**: same selection in a `for` loop; breaks when no guard is true.
 
 GCL construct guards must reference only local variables (remote/neighbor variables are not supported inside `if…fi` or `do…od`).
+
+## Simulator internals (`internal/sim/`, `internal/viz/`)
+
+### Packages
+
+- **`internal/sim/eval.go`** — runtime expression evaluator. Walks the `parser.Expr` AST and returns `int64`/`bool`/`string` values. Mirrors the code-generation walk in `intermediate/expression.go`.
+- **`internal/sim/engine.go`** — `Node` and `Engine` types. `Engine.Step()` picks a uniform-random node, evaluates all eligible guards, picks one true guard at random, and executes its action.
+- **`internal/sim/topology.go`** — `LoadTopology(yamlFile)` and `GenerateTopology(n, style, rng)`. `random` style guarantees connectivity via a spanning tree.
+- **`internal/viz/server.go`** — HTTP server. REST endpoints: `GET /api/state`, `POST /api/step`, `POST /api/reset`, `GET /api/compile` (returns zip of generated Go module).
+- **`internal/viz/ui.go`** — embedded single-page app (D3.js force graph, step/auto/reset controls, scrolling log).
+
+### Parser/evaluator coupling
+
+`eval.go` and `intermediate/expression.go` both walk the same `parser.Expr` AST. A grammar change (new expression type, new operator) must be reflected in **both** files. The integration tests in `internal/sim/sim_test.go` (GCD convergence, max propagation, if…fi, do…od, Reset) will catch drift.
+
+`intermediate.Expression.GetExpr()` exposes the underlying `*parser.Expr` so the sim evaluator can reach init expressions (e.g. `= rand.Int63n(1000)`) without going through the code-generation path.
+
+### Priority in the simulator
+
+Each node maintains a per-statement countdown. On every call to `stepNode`:
+- If `countdown > 0`: decrement and skip (not eligible this step).
+- If `countdown == 0`: evaluate guard; after eligibility (whether or not selected), reset to `configuredPriority - 1`.
+
+For priority 1 the countdown is always 0 — fires every step. For priority N it fires once every N steps of that node.
 
 ## Adding a new `.prose` example
 

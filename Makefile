@@ -7,7 +7,11 @@ fmt:
 
 build:
 	echo "building the compiler..."
-	mkdir -p bin/ && go build  -o bin/prose github.com/aumahesh/goprose/cmd
+	mkdir -p bin/ && go build -o bin/prose github.com/aumahesh/goprose/cmd
+
+build-sim:
+	echo "building the simulator..."
+	mkdir -p bin/ && go build -o bin/prose-sim github.com/aumahesh/goprose/cmd/prose-sim
 
 all: fmt build
 
